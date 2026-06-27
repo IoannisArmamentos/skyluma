@@ -1,5 +1,6 @@
 package com.skyluma.weather.common.error;
 
+import com.skyluma.weather.openweather.client.OpenWeatherClientException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +26,17 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 messages
+        );
+    }
+
+    @ExceptionHandler(OpenWeatherClientException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ApiErrorResponse handleOpenWeatherClientException(OpenWeatherClientException exception) {
+        return new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.BAD_GATEWAY.value(),
+                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
+                List.of(exception.getMessage())
         );
     }
 }
