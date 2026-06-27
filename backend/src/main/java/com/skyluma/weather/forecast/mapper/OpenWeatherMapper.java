@@ -3,7 +3,9 @@ package com.skyluma.weather.forecast.mapper;
 import com.skyluma.weather.forecast.dto.CurrentWeatherResponse;
 import com.skyluma.weather.forecast.dto.DailyForecastResponse;
 import com.skyluma.weather.forecast.dto.LocationResponse;
+import com.skyluma.weather.forecast.dto.WeatherAlertResponse;
 import com.skyluma.weather.forecast.dto.WeatherResponse;
+import com.skyluma.weather.openweather.dto.OpenWeatherAlert;
 import com.skyluma.weather.openweather.dto.OpenWeatherCondition;
 import com.skyluma.weather.openweather.dto.OpenWeatherCurrent;
 import com.skyluma.weather.openweather.dto.OpenWeatherDaily;
@@ -32,7 +34,8 @@ public class OpenWeatherMapper {
                         currentCondition == null ? null : currentCondition.description(),
                         currentCondition == null ? null : currentCondition.icon()
                 ),
-                mapDailyForecasts(openWeatherResponse.daily())
+                mapDailyForecasts(openWeatherResponse.daily()),
+                mapAlerts(openWeatherResponse.alerts())
         );
     }
 
@@ -56,6 +59,26 @@ public class OpenWeatherMapper {
                 dailyForecast.humidity(),
                 condition == null ? null : condition.description(),
                 condition == null ? null : condition.icon()
+        );
+    }
+
+    private List<WeatherAlertResponse> mapAlerts(List<OpenWeatherAlert> alerts) {
+        if (alerts == null) {
+            return List.of();
+        }
+
+        return alerts.stream()
+                .map(this::mapAlert)
+                .toList();
+    }
+
+    private WeatherAlertResponse mapAlert(OpenWeatherAlert alert) {
+        return new WeatherAlertResponse(
+                alert.sender_name(),
+                alert.event(),
+                alert.start(),
+                alert.end(),
+                alert.description()
         );
     }
 

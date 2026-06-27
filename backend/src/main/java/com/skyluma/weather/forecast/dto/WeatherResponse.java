@@ -5,6 +5,7 @@ import java.util.List;
 public record WeatherResponse(
         LocationResponse location,
         CurrentWeatherResponse current,
-        List<DailyForecastResponse> daily
+        List<DailyForecastResponse> daily,
+        List<WeatherAlertResponse> alerts
 ) {
 }
