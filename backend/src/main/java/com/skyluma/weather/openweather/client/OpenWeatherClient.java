@@ -1,6 +1,7 @@
 package com.skyluma.weather.openweather.client;
 
 import com.skyluma.weather.config.OpenWeatherProperties;
+import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -15,7 +16,7 @@ public class OpenWeatherClient {
         this.properties = properties;
     }
 
-    public String getWeather(double latitude, double longitude) {
+    public OpenWeatherResponse getWeather(double latitude, double longitude) {
         return restClient.get()
                 .uri(properties.baseUrl() + "/onecall?lat={latitude}&lon={longitude}&appid={apiKey}&units={units}&lang={language}",
                         latitude,
@@ -24,6 +25,6 @@ public class OpenWeatherClient {
                         properties.units(),
                         properties.language())
                 .retrieve()
-                .body(String.class);
+                .body(OpenWeatherResponse.class);
     }
 }
