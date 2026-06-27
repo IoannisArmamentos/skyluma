@@ -1,10 +1,12 @@
 package com.skyluma.weather.forecast.mapper;
 
 import com.skyluma.weather.forecast.dto.CurrentWeatherResponse;
+import com.skyluma.weather.forecast.dto.DailyForecastResponse;
 import com.skyluma.weather.forecast.dto.LocationResponse;
 import com.skyluma.weather.forecast.dto.WeatherResponse;
 import com.skyluma.weather.openweather.dto.OpenWeatherCondition;
 import com.skyluma.weather.openweather.dto.OpenWeatherCurrent;
+import com.skyluma.weather.openweather.dto.OpenWeatherDaily;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +21,7 @@ public class OpenWeatherMapper {
             double longitude
     ) {
         OpenWeatherCurrent current = openWeatherResponse.current();
-        OpenWeatherCondition condition = getFirstCondition(current.weather());
+        OpenWeatherCondition currentCondition = getFirstCondition(current.weather());
 
         return new WeatherResponse(
                 new LocationResponse(latitude, longitude),
@@ -27,9 +29,33 @@ public class OpenWeatherMapper {
                         current.temp(),
                         current.feels_like(),
                         current.humidity(),
-                        condition == null ? null : condition.description(),
-                        condition == null ? null : condition.icon()
-                )
+                        currentCondition == null ? null : currentCondition.description(),
+                        currentCondition == null ? null : currentCondition.icon()
+                ),
+                mapDailyForecasts(openWeatherResponse.daily())
+        );
+    }
+
+    private List<DailyForecastResponse> mapDailyForecasts(List<OpenWeatherDaily> dailyForecasts) {
+        if (dailyForecasts == null) {
+            return List.of();
+        }
+
+        return dailyForecasts.stream()
+                .map(this::mapDailyForecast)
+                .toList();
+    }
+
+    private DailyForecastResponse mapDailyForecast(OpenWeatherDaily dailyForecast) {
+        OpenWeatherCondition condition = getFirstCondition(dailyForecast.weather());
+
+        return new DailyForecastResponse(
+                dailyForecast.dt(),
+                dailyForecast.temp().min(),
+                dailyForecast.temp().max(),
+                dailyForecast.humidity(),
+                condition == null ? null : condition.description(),
+                condition == null ? null : condition.icon()
         );
     }
 
