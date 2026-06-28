@@ -67,6 +67,15 @@ export class WeatherPage {
     );
   }
 
+  getProviderLabel(provider: WeatherProvider): string {
+    switch (provider) {
+      case 'openmeteo':
+        return 'Open-Meteo';
+      case 'openweather':
+        return 'OpenWeather';
+    }
+  }
+
   private getErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.error?.messages?.length > 0) {
       return error.error.messages.join(' ');
