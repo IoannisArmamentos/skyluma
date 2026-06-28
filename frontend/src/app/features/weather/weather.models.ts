@@ -1,3 +1,5 @@
+export type WeatherProvider = 'openmeteo' | 'openweather';
+
 export interface WeatherResponse {
   location: LocationResponse;
   current: CurrentWeatherResponse;
