@@ -36,6 +36,11 @@ export class WeatherPage {
   constructor(private readonly weatherApi: WeatherApi) {}
 
   loadWeather(): void {
+    if (!this.areCoordinatesValid()) {
+      this.errorMessage = 'Latitude must be between -90 and 90, and longitude must be between -180 and 180.';
+      return;
+    }
+
     this.loading = true;
     this.errorMessage = '';
 
@@ -78,6 +83,13 @@ export class WeatherPage {
 
   getProviderLabel(provider: WeatherProvider): string {
     return this.providerOptions.find((option) => option.value === provider)?.label ?? provider;
+  }
+
+  private areCoordinatesValid(): boolean {
+    return this.latitude >= -90 &&
+      this.latitude <= 90 &&
+      this.longitude >= -180 &&
+      this.longitude <= 180;
   }
 
   private getErrorMessage(error: unknown): string {
