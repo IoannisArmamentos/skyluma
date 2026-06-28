@@ -18,6 +18,7 @@ export class WeatherPage {
 
   weather?: WeatherResponse;
   loading = false;
+  locating = false;
   errorMessage = '';
 
   constructor(private readonly weatherApi: WeatherApi) {}
@@ -36,6 +37,29 @@ export class WeatherPage {
         this.loading = false;
       },
     });
+  }
+
+  useCurrentLocation(): void {
+    if (!navigator.geolocation) {
+      this.errorMessage = 'Geolocation is not supported by this browser.';
+      return;
+    }
+
+    this.locating = true;
+    this.errorMessage = '';
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.latitude = Number(position.coords.latitude.toFixed(4));
+        this.longitude = Number(position.coords.longitude.toFixed(4));
+        this.locating = false;
+        this.loadWeather();
+      },
+      () => {
+        this.errorMessage = 'Could not get your current location.';
+        this.locating = false;
+      },
+    );
   }
 
   private getErrorMessage(error: unknown): string {

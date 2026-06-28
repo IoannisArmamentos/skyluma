@@ -30,6 +30,10 @@
     <button type="submit" [disabled]="loading">
       {{ loading ? 'Loading...' : 'Get weather' }}
     </button>
+
+    <button type="button" [disabled]="loading || locating" (click)="useCurrentLocation()">
+      {{ locating ? 'Locating...' : 'Use current location' }}
+    </button>
   </form>
 
   @if (errorMessage) {

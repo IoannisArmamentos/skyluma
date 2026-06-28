@@ -84,7 +84,7 @@
 
 @media (min-width: 720px) {
   .search-form {
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr auto auto;
     align-items: end;
   }
 
