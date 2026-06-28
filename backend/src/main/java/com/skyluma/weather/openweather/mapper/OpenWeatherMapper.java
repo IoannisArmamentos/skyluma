@@ -1,4 +1,4 @@
-package com.skyluma.weather.forecast.mapper;
+package com.skyluma.weather.openweather.mapper;
 
 import com.skyluma.weather.forecast.dto.CurrentWeatherResponse;
 import com.skyluma.weather.forecast.dto.DailyForecastResponse;
