@@ -19,7 +19,7 @@ public class OpenWeatherClient {
 
     public OpenWeatherResponse getWeather(double latitude, double longitude) {
         try {
-            return openWeatherRestClient.get()
+            OpenWeatherResponse response = openWeatherRestClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/onecall")
                             .queryParam("lat", latitude)
@@ -30,6 +30,12 @@ public class OpenWeatherClient {
                             .build())
                     .retrieve()
                     .body(OpenWeatherResponse.class);
+
+            if (response == null) {
+                throw new OpenWeatherClientException("OpenWeather returned an empty response");
+            }
+
+            return response;
         } catch (RestClientException exception) {
             throw new OpenWeatherClientException("Could not fetch weather data from OpenWeather");
         }
