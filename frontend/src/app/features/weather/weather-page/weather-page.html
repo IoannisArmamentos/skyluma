@@ -60,9 +60,13 @@
       <h2>Current weather</h2>
 
       <div class="weather-card">
-        <p class="temperature">
-          {{ weather.current.temperature | number: '1.0-1' }}°C
-        </p>
+        <div class="current-summary">
+          <span class="weather-icon">{{ getWeatherIcon(weather.current.icon) }}</span>
+
+          <p class="temperature">
+            {{ weather.current.temperature | number: '1.0-1' }}°C
+          </p>
+        </div>
 
         <p>{{ weather.current.description }}</p>
         <p class="provider">Provider: {{ getProviderLabel(weather.provider) }}</p>
@@ -78,6 +82,7 @@
         @for (day of weather.daily; track day.dateTime) {
           <article class="forecast-card">
             <h3>{{ day.dateTime | date: 'EEE, MMM d' }}</h3>
+            <p class="forecast-icon">{{ getWeatherIcon(day.icon) }}</p>
             <p>{{ day.description }}</p>
             <p>
               {{ day.minTemperature | number: '1.0-1' }}°C /

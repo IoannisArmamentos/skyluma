@@ -107,6 +107,23 @@ input[type='number']::-webkit-inner-spin-button {
   appearance: none;
 }
 
+.current-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.weather-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.forecast-icon {
+  margin: 0.5rem 0;
+  font-size: 2rem;
+  line-height: 1;
+}
+
 @media (min-width: 720px) {
   .search-form {
     grid-template-columns: 1fr 1fr 1fr auto auto;
