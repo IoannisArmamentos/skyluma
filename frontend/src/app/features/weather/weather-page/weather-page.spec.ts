@@ -5,6 +5,8 @@ import { WeatherApi } from '../weather-api';
 import { WeatherProvider, WeatherResponse } from '../weather.models';
 import { WeatherPage } from './weather-page';
 
+import * as L from 'leaflet';
+
 interface WeatherApiMock {
   calls: Array<{
     latitude: number;
@@ -193,6 +195,36 @@ describe('WeatherPage', () => {
 
     expect(component.errorMessage).toBe('Geolocation is not supported by this browser.');
     expect(component.locating).toBe(false);
+  });
+
+  it('renders the location map', () => {
+    const page = fixture.nativeElement as HTMLElement;
+
+    expect(page.textContent).toContain('Map');
+    expect(page.textContent).toContain('Click on the map to select a location.');
+    expect(page.querySelector('#weather-map')).not.toBeNull();
+  });
+
+  it('loads weather when the map is clicked', () => {
+    weatherApi.calls = [];
+
+    const map = (component as unknown as { map: L.Map }).map;
+
+    map.fire('click', {
+      latlng: L.latLng(51.12346, 4.98766),
+    });
+
+    fixture.detectChanges();
+
+    expect(component.latitude).toBe(51.1235);
+    expect(component.longitude).toBe(4.9877);
+    expect(weatherApi.calls).toEqual([
+      {
+        latitude: 51.1235,
+        longitude: 4.9877,
+        provider: undefined,
+      },
+    ]);
   });
 
   function getButtonByText(text: string): HTMLButtonElement {
