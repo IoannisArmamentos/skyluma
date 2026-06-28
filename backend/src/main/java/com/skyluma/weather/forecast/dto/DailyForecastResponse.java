@@ -6,7 +6,7 @@ public record DailyForecastResponse(
         Instant dateTime,
         double minTemperature,
         double maxTemperature,
-        int humidity,
+        Integer humidity,
         String description,
         String icon
 ) {
