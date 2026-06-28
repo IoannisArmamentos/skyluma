@@ -13,4 +13,11 @@ public class RestClientConfig {
                 .baseUrl(properties.baseUrl())
                 .build();
     }
+
+    @Bean
+    public RestClient openMeteoRestClient(OpenMeteoProperties properties) {
+        return RestClient.builder()
+                .baseUrl(properties.baseUrl())
+                .build();
+    }
 }

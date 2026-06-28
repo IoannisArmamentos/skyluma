@@ -12,3 +12,6 @@ openweather:
   api-key: ${OPENWEATHER_API_KEY:}
   units: metric
   language: en
+
+openmeteo:
+  base-url: https://api.open-meteo.com
