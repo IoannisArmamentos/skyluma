@@ -5,6 +5,7 @@ import com.skyluma.weather.forecast.dto.DailyForecastResponse;
 import com.skyluma.weather.forecast.dto.LocationResponse;
 import com.skyluma.weather.forecast.dto.WeatherAlertResponse;
 import com.skyluma.weather.forecast.dto.WeatherResponse;
+import com.skyluma.weather.openweather.client.OpenWeatherClientException;
 import com.skyluma.weather.openweather.dto.OpenWeatherAlert;
 import com.skyluma.weather.openweather.dto.OpenWeatherCondition;
 import com.skyluma.weather.openweather.dto.OpenWeatherCurrent;
@@ -22,6 +23,10 @@ public class OpenWeatherMapper {
             double latitude,
             double longitude
     ) {
+        if (openWeatherResponse.current() == null) {
+            throw new OpenWeatherClientException("OpenWeather response is missing current weather data");
+        }
+
         OpenWeatherCurrent current = openWeatherResponse.current();
         OpenWeatherCondition currentCondition = getFirstCondition(current.weather());
 
@@ -87,6 +92,6 @@ public class OpenWeatherMapper {
             return null;
         }
 
-        return conditions.get(0);
+        return conditions.getFirst();
     }
 }
