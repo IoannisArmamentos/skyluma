@@ -64,25 +64,7 @@ describe('WeatherPage', () => {
       },
     };
 
-    Object.defineProperty(navigator, 'geolocation', {
-      configurable: true,
-      value: {
-        getCurrentPosition: (
-          success: PositionCallback,
-        ) => success({
-          coords: {
-            latitude: 50.8798,
-            longitude: 4.7005,
-            accuracy: 1,
-            altitude: null,
-            altitudeAccuracy: null,
-            heading: null,
-            speed: null,
-          },
-          timestamp: Date.now(),
-        } as GeolocationPosition),
-      },
-    });
+    mockSuccessfulGeolocation();
 
     await TestBed.configureTestingModule({
       imports: [WeatherPage],
@@ -179,6 +161,40 @@ describe('WeatherPage', () => {
     expect(component.errorMessage).toBe('Could not load weather data.');
   });
 
+  it('uses browser coordinates when current location is available', () => {
+    expect(weatherApi.calls).toEqual([
+      {
+        latitude: 50.8798,
+        longitude: 4.7005,
+        provider: undefined,
+      },
+    ]);
+  });
+
+  it('shows an error when current location fails', async () => {
+    mockFailedGeolocation();
+
+    fixture = TestBed.createComponent(WeatherPage);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.errorMessage).toBe(
+      'Location access was not allowed. You can enter coordinates manually.',
+    );
+    expect(component.locating).toBe(false);
+  });
+
+  it('shows an error when geolocation is not supported', () => {
+    mockMissingGeolocation();
+
+    fixture = TestBed.createComponent(WeatherPage);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.errorMessage).toBe('Geolocation is not supported by this browser.');
+    expect(component.locating).toBe(false);
+  });
+
   function getButtonByText(text: string): HTMLButtonElement {
     const buttons = Array.from(
       fixture.nativeElement.querySelectorAll('button'),
@@ -191,5 +207,52 @@ describe('WeatherPage', () => {
     }
 
     return button;
+  }
+
+  function mockSuccessfulGeolocation(latitude = 50.8798, longitude = 4.7005): void {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: (
+          success: PositionCallback,
+        ) => success({
+          coords: {
+            latitude,
+            longitude,
+            accuracy: 1,
+            altitude: null,
+            altitudeAccuracy: null,
+            heading: null,
+            speed: null,
+          },
+          timestamp: Date.now(),
+        } as GeolocationPosition),
+      },
+    });
+  }
+
+  function mockFailedGeolocation(): void {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: (
+          _success: PositionCallback,
+          error: PositionErrorCallback,
+        ) => error({
+          code: 1,
+          message: 'Permission denied',
+          PERMISSION_DENIED: 1,
+          POSITION_UNAVAILABLE: 2,
+          TIMEOUT: 3,
+        } as GeolocationPositionError),
+      },
+    });
+  }
+
+  function mockMissingGeolocation(): void {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: undefined,
+    });
   }
 });
