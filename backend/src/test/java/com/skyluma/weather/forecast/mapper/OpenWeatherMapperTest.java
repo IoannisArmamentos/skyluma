@@ -1,17 +1,14 @@
 package com.skyluma.weather.forecast.mapper;
 
 import com.skyluma.weather.forecast.dto.WeatherResponse;
-import com.skyluma.weather.openweather.dto.OpenWeatherAlert;
-import com.skyluma.weather.openweather.dto.OpenWeatherCondition;
-import com.skyluma.weather.openweather.dto.OpenWeatherCurrent;
-import com.skyluma.weather.openweather.dto.OpenWeatherDaily;
-import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
-import com.skyluma.weather.openweather.dto.OpenWeatherTemperature;
+import com.skyluma.weather.openweather.client.OpenWeatherClientException;
+import com.skyluma.weather.openweather.dto.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OpenWeatherMapperTest {
 
@@ -111,5 +108,20 @@ class OpenWeatherMapperTest {
         assertThat(response.alerts().getFirst().start()).isEqualTo(1719504000L);
         assertThat(response.alerts().getFirst().end()).isEqualTo(1719511200L);
         assertThat(response.alerts().getFirst().description()).isEqualTo("Thunderstorms expected in the area.");
+    }
+
+    @Test
+    void throwsExceptionWhenCurrentWeatherIsMissing() {
+        OpenWeatherResponse openWeatherResponse = new OpenWeatherResponse(
+                50.8798,
+                4.7005,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        assertThatThrownBy(() -> mapper.toWeatherResponse(openWeatherResponse, 50.8798, 4.7005))
+                .isInstanceOf(OpenWeatherClientException.class)
+                .hasMessage("OpenWeather response is missing current weather data");
     }
 }
