@@ -81,4 +81,16 @@ class WeatherControllerValidationTest {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.messages[0]").value("Invalid value for request parameter: longitude"));
     }
+
+    @Test
+    void returnsBadRequestWhenWeatherProviderIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/weather")
+                        .param("latitude", "50.8798")
+                        .param("longitude", "4.7005")
+                        .param("provider", "banana"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.messages[0]").value("Unsupported weather provider: banana"));
+    }
 }
