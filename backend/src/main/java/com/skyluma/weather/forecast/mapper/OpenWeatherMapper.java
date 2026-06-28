@@ -34,7 +34,7 @@ public class OpenWeatherMapper {
                 new LocationResponse(latitude, longitude),
                 new CurrentWeatherResponse(
                         current.temp(),
-                        current.feels_like(),
+                        current.feelsLike(),
                         current.humidity(),
                         currentCondition == null ? null : currentCondition.description(),
                         currentCondition == null ? null : currentCondition.icon()
@@ -79,7 +79,7 @@ public class OpenWeatherMapper {
 
     private WeatherAlertResponse mapAlert(OpenWeatherAlert alert) {
         return new WeatherAlertResponse(
-                alert.sender_name(),
+                alert.senderName(),
                 alert.event(),
                 alert.start(),
                 alert.end(),
