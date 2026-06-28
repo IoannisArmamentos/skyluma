@@ -31,8 +31,8 @@ public class WeatherController {
             double longitude,
 
             @RequestParam(required = false)
-            WeatherProviderType provider
+            String provider
     ) {
-        return weatherService.getWeather(latitude, longitude, provider);
+        return weatherService.getWeather(latitude, longitude, WeatherProviderType.fromValue(provider));
     }
 }

@@ -2,6 +2,7 @@ package com.skyluma.weather.common.error;
 
 import com.skyluma.weather.openmeteo.client.OpenMeteoClientException;
 import com.skyluma.weather.openweather.client.OpenWeatherClientException;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -21,7 +22,7 @@ public class GlobalExceptionHandler {
     public ApiErrorResponse handleConstraintViolation(ConstraintViolationException exception) {
         List<String> messages = exception.getConstraintViolations()
                 .stream()
-                .map(violation -> violation.getMessage())
+                .map(ConstraintViolation::getMessage)
                 .toList();
 
         return badRequest(messages);
@@ -37,6 +38,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiErrorResponse handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException exception) {
         return badRequest(List.of("Invalid value for request parameter: " + exception.getName()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleIllegalArgumentException(IllegalArgumentException exception) {
+        return badRequest(List.of(exception.getMessage()));
     }
 
     @ExceptionHandler(OpenWeatherClientException.class)
