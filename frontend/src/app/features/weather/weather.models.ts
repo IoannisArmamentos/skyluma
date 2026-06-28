@@ -1,6 +1,7 @@
 export type WeatherProvider = 'openmeteo' | 'openweather';
 
 export interface WeatherResponse {
+  provider: WeatherProvider;
   location: LocationResponse;
   current: CurrentWeatherResponse;
   daily: DailyForecastResponse[];

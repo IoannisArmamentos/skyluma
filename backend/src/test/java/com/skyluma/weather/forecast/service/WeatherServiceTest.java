@@ -71,6 +71,7 @@ class WeatherServiceTest {
 
     private static WeatherResponse weatherResponse(String description) {
         return new WeatherResponse(
+                "test",
                 new LocationResponse(50.8798, 4.7005),
                 new CurrentWeatherResponse(
                         21.5,

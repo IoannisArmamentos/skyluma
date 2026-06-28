@@ -32,6 +32,7 @@ class OpenWeatherMapperTest {
 
         WeatherResponse response = mapper.toWeatherResponse(openWeatherResponse, 50.8798, 4.7005);
 
+        assertThat(response.provider()).isEqualTo("openweather");
         assertThat(response.location().latitude()).isEqualTo(50.8798);
         assertThat(response.location().longitude()).isEqualTo(4.7005);
         assertThat(response.current().temperature()).isEqualTo(21.5);

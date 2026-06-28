@@ -32,6 +32,7 @@ public class OpenWeatherMapper {
         OpenWeatherCondition currentCondition = getFirstCondition(current.weather());
 
         return new WeatherResponse(
+                "openweather",
                 new LocationResponse(latitude, longitude),
                 new CurrentWeatherResponse(
                         current.temp(),
