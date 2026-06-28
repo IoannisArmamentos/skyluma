@@ -1,0 +1,94 @@
+.weather-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.hero {
+  margin-bottom: 2rem;
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: 2.5rem;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.search-form {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  label {
+    display: grid;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+
+  input {
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font: inherit;
+  }
+
+  button {
+    width: fit-content;
+    padding: 0.75rem 1rem;
+    border: 0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+.error-message {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #fee2e2;
+}
+
+.current-weather,
+.daily-forecast,
+.alerts {
+  margin-top: 2rem;
+}
+
+.weather-card,
+.forecast-card,
+.alert-card {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+}
+
+.temperature {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.forecast-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .search-form {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+  }
+
+  .forecast-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

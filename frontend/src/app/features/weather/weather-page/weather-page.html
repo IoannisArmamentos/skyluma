@@ -1,0 +1,92 @@
+<main class="weather-page">
+  <section class="hero">
+    <h1>SkyLuma</h1>
+    <p>Check the current weather, daily forecast, and weather alerts for a location.</p>
+  </section>
+
+  <form class="search-form" (ngSubmit)="loadWeather()">
+    <label>
+      Latitude
+      <input
+        type="number"
+        name="latitude"
+        step="0.0001"
+        required
+        [(ngModel)]="latitude"
+      />
+    </label>
+
+    <label>
+      Longitude
+      <input
+        type="number"
+        name="longitude"
+        step="0.0001"
+        required
+        [(ngModel)]="longitude"
+      />
+    </label>
+
+    <button type="submit" [disabled]="loading">
+      {{ loading ? 'Loading...' : 'Get weather' }}
+    </button>
+  </form>
+
+  @if (errorMessage) {
+    <p class="error-message">{{ errorMessage }}</p>
+  }
+
+  @if (weather) {
+    <section class="current-weather">
+      <h2>Current weather</h2>
+
+      <div class="weather-card">
+        <p class="temperature">
+          {{ weather.current.temperature | number: '1.0-1' }}°C
+        </p>
+
+        <p>{{ weather.current.description }}</p>
+        <p>Feels like {{ weather.current.feelsLike | number: '1.0-1' }}°C</p>
+        <p>Humidity {{ weather.current.humidity }}%</p>
+      </div>
+    </section>
+
+    <section class="daily-forecast">
+      <h2>Daily forecast</h2>
+
+      <div class="forecast-grid">
+        @for (day of weather.daily; track day.dateTime) {
+          <article class="forecast-card">
+            <h3>{{ day.dateTime | date: 'EEE, MMM d' }}</h3>
+            <p>{{ day.description }}</p>
+            <p>
+              {{ day.minTemperature | number: '1.0-1' }}°C /
+              {{ day.maxTemperature | number: '1.0-1' }}°C
+            </p>
+            <p>Humidity {{ day.humidity }}%</p>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="alerts">
+      <h2>Weather alerts</h2>
+
+      @if (weather.alerts.length > 0) {
+        @for (alert of weather.alerts; track alert.event + alert.start) {
+          <article class="alert-card">
+            <h3>{{ alert.event }}</h3>
+            <p>{{ alert.description }}</p>
+            <p>
+              {{ alert.start | date: 'short' }} -
+              {{ alert.end | date: 'short' }}
+            </p>
+            <p>{{ alert.senderName }}</p>
+          </article>
+        }
+      } @else {
+        <p>No weather alerts for this location.</p>
+      }
+    </section>
+  }
+</main>
