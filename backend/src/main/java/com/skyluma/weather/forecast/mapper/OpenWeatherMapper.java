@@ -13,6 +13,7 @@ import com.skyluma.weather.openweather.dto.OpenWeatherDaily;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.List;
 
 @Component
@@ -58,7 +59,7 @@ public class OpenWeatherMapper {
         OpenWeatherCondition condition = getFirstCondition(dailyForecast.weather());
 
         return new DailyForecastResponse(
-                dailyForecast.dt(),
+                Instant.ofEpochSecond(dailyForecast.dt()),
                 dailyForecast.temp().min(),
                 dailyForecast.temp().max(),
                 dailyForecast.humidity(),
@@ -81,8 +82,8 @@ public class OpenWeatherMapper {
         return new WeatherAlertResponse(
                 alert.senderName(),
                 alert.event(),
-                alert.start(),
-                alert.end(),
+                Instant.ofEpochSecond(alert.start()),
+                Instant.ofEpochSecond(alert.end()),
                 alert.description()
         );
     }
