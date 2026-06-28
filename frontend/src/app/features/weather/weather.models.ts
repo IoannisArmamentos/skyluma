@@ -24,7 +24,7 @@ export interface DailyForecastResponse {
   dateTime: string;
   minTemperature: number;
   maxTemperature: number;
-  humidity: number;
+  humidity: number | null;
   description: string;
   icon: string;
 }

@@ -76,7 +76,9 @@
               {{ day.minTemperature | number: '1.0-1' }}°C /
               {{ day.maxTemperature | number: '1.0-1' }}°C
             </p>
-            <p>Humidity {{ day.humidity }}%</p>
+            @if (day.humidity !== null) {
+              <p>Humidity {{ day.humidity }}%</p>
+            }
           </article>
         }
       </div>

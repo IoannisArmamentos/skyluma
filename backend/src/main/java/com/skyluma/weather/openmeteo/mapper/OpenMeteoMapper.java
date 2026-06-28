@@ -56,7 +56,7 @@ public class OpenMeteoMapper {
                         LocalDate.parse(daily.time().get(index)).atStartOfDay().toInstant(ZoneOffset.UTC),
                         daily.temperatureMin().get(index),
                         daily.temperatureMax().get(index),
-                        0,
+                        null,
                         toDescription(daily.weatherCode().get(index)),
                         String.valueOf(daily.weatherCode().get(index))
                 ))
