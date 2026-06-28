@@ -2,20 +2,19 @@ package com.skyluma.weather.openweather.client;
 
 import com.skyluma.weather.config.OpenWeatherProperties;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class OpenWeatherClient {
 
     private final RestClient openWeatherRestClient;
     private final OpenWeatherProperties properties;
-
-    public OpenWeatherClient(RestClient openWeatherRestClient, OpenWeatherProperties properties) {
-        this.openWeatherRestClient = openWeatherRestClient;
-        this.properties = properties;
-    }
 
     public OpenWeatherResponse getWeather(double latitude, double longitude) {
         try {
@@ -37,6 +36,7 @@ public class OpenWeatherClient {
 
             return response;
         } catch (RestClientException exception) {
+            log.warn("Failed to fetch weather data from OpenWeather", exception);
             throw new OpenWeatherClientException("Could not fetch weather data from OpenWeather");
         }
     }

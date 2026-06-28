@@ -5,21 +5,15 @@ import com.skyluma.weather.forecast.provider.WeatherProvider;
 import com.skyluma.weather.openmeteo.client.OpenMeteoClient;
 import com.skyluma.weather.openmeteo.dto.OpenMeteoResponse;
 import com.skyluma.weather.openmeteo.mapper.OpenMeteoMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class OpenMeteoProvider implements WeatherProvider {
 
     private final OpenMeteoClient openMeteoClient;
     private final OpenMeteoMapper openMeteoMapper;
-
-    public OpenMeteoProvider(
-            OpenMeteoClient openMeteoClient,
-            OpenMeteoMapper openMeteoMapper
-    ) {
-        this.openMeteoClient = openMeteoClient;
-        this.openMeteoMapper = openMeteoMapper;
-    }
 
     @Override
     public WeatherResponse getWeather(double latitude, double longitude) {
