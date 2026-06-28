@@ -1,6 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { finalize } from 'rxjs';
@@ -19,7 +19,7 @@ interface ProviderOption {
   templateUrl: './weather-page.html',
   styleUrl: './weather-page.scss',
 })
-export class WeatherPage {
+export class WeatherPage implements OnInit {
   latitude = 50.8798;
   longitude = 4.7005;
   selectedProvider: WeatherProvider | '' = '';
@@ -39,6 +39,10 @@ export class WeatherPage {
     private readonly weatherApi: WeatherApi,
     private readonly changeDetectorRef: ChangeDetectorRef,
   ) {}
+
+  ngOnInit(): void {
+    this.useCurrentLocation();
+  }
 
   loadWeather(): void {
     if (!this.areCoordinatesValid()) {
@@ -92,7 +96,7 @@ export class WeatherPage {
         this.loadWeather();
       },
       () => {
-        this.errorMessage = 'Could not get your current location.';
+        this.errorMessage = 'Location access was not allowed. You can enter coordinates manually.';
         this.locating = false;
         this.changeDetectorRef.markForCheck();
       },
