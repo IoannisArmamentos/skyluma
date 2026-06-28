@@ -39,4 +39,46 @@ class WeatherControllerValidationTest {
                 .andExpect(jsonPath("$.error").value("Bad Request"))
                 .andExpect(jsonPath("$.messages[0]", containsString("Longitude")));
     }
+
+    @Test
+    void returnsBadRequestWhenLatitudeIsMissing() throws Exception {
+        mockMvc.perform(get("/api/weather")
+                        .param("longitude", "4.7005"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.messages[0]").value("Missing required request parameter: latitude"));
+    }
+
+    @Test
+    void returnsBadRequestWhenLongitudeIsMissing() throws Exception {
+        mockMvc.perform(get("/api/weather")
+                        .param("latitude", "50.8798"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.messages[0]").value("Missing required request parameter: longitude"));
+    }
+
+    @Test
+    void returnsBadRequestWhenLatitudeIsNotANumber() throws Exception {
+        mockMvc.perform(get("/api/weather")
+                        .param("latitude", "abc")
+                        .param("longitude", "4.7005"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.messages[0]").value("Invalid value for request parameter: latitude"));
+    }
+
+    @Test
+    void returnsBadRequestWhenLongitudeIsNotANumber() throws Exception {
+        mockMvc.perform(get("/api/weather")
+                        .param("latitude", "50.8798")
+                        .param("longitude", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.messages[0]").value("Invalid value for request parameter: longitude"));
+    }
 }
