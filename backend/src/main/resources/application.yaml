@@ -6,6 +6,8 @@ skyluma:
   cors:
     allowed-origins:
       - http://localhost:4200
+  weather:
+    provider: openmeteo
 
 openweather:
   base-url: https://api.openweathermap.org/data/3.0
