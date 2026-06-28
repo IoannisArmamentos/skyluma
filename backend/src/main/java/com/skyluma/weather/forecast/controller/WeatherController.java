@@ -1,6 +1,7 @@
 package com.skyluma.weather.forecast.controller;
 
 import com.skyluma.weather.forecast.dto.WeatherResponse;
+import com.skyluma.weather.forecast.provider.WeatherProviderType;
 import com.skyluma.weather.forecast.service.WeatherService;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -27,8 +28,11 @@ public class WeatherController {
             @RequestParam
             @DecimalMin(value = "-180.0", message = "Longitude must be greater than or equal to -180")
             @DecimalMax(value = "180.0", message = "Longitude must be less than or equal to 180")
-            double longitude
+            double longitude,
+
+            @RequestParam(required = false)
+            WeatherProviderType provider
     ) {
-        return weatherService.getWeather(latitude, longitude);
+        return weatherService.getWeather(latitude, longitude, provider);
     }
 }

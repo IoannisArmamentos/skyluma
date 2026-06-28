@@ -28,7 +28,7 @@ class WeatherServiceTest {
                 new WeatherProviderProperties(WeatherProviderType.OPENMETEO)
         );
 
-        WeatherResponse response = weatherService.getWeather(50.8798, 4.7005);
+        WeatherResponse response = weatherService.getWeather(50.8798, 4.7005, null);
 
         assertThat(response).isSameAs(openMeteoResponse);
         assertThat(response.current().description()).isEqualTo("Open-Meteo");
@@ -41,9 +41,32 @@ class WeatherServiceTest {
                 new WeatherProviderProperties(WeatherProviderType.OPENMETEO)
         );
 
-        assertThatThrownBy(() -> weatherService.getWeather(50.8798, 4.7005))
+        assertThatThrownBy(() -> weatherService.getWeather(50.8798, 4.7005, null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Configured weather provider is not available: OPENMETEO");
+    }
+
+    @Test
+    void usesRequestWeatherProviderWhenProvided() {
+        WeatherResponse openMeteoResponse = weatherResponse("Open-Meteo");
+        WeatherResponse openWeatherResponse = weatherResponse("OpenWeather");
+
+        WeatherService weatherService = new WeatherService(
+                List.of(
+                        new TestWeatherProvider(WeatherProviderType.OPENMETEO, openMeteoResponse),
+                        new TestWeatherProvider(WeatherProviderType.OPENWEATHER, openWeatherResponse)
+                ),
+                new WeatherProviderProperties(WeatherProviderType.OPENMETEO)
+        );
+
+        WeatherResponse response = weatherService.getWeather(
+                50.8798,
+                4.7005,
+                WeatherProviderType.OPENWEATHER
+        );
+
+        assertThat(response).isSameAs(openWeatherResponse);
+        assertThat(response.current().description()).isEqualTo("OpenWeather");
     }
 
     private static WeatherResponse weatherResponse(String description) {
