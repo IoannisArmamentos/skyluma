@@ -9,7 +9,7 @@ import { WeatherResponse } from './weather.models';
   providedIn: 'root',
 })
 export class WeatherApi {
-  private readonly apiUrl = 'http://localhost:8080/api/weather';
+  private readonly apiUrl = '/api/weather';
 
   constructor(private readonly http: HttpClient) {}
 
