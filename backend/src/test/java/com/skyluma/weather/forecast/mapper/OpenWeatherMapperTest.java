@@ -1,6 +1,7 @@
 package com.skyluma.weather.forecast.mapper;
 
 import com.skyluma.weather.forecast.dto.WeatherResponse;
+import com.skyluma.weather.openweather.dto.OpenWeatherAlert;
 import com.skyluma.weather.openweather.dto.OpenWeatherCondition;
 import com.skyluma.weather.openweather.dto.OpenWeatherCurrent;
 import com.skyluma.weather.openweather.dto.OpenWeatherDaily;
@@ -27,6 +28,7 @@ class OpenWeatherMapperTest {
                         65,
                         List.of(new OpenWeatherCondition("clear sky", "01d"))
                 ),
+                List.of(),
                 List.of()
         );
 
@@ -40,6 +42,7 @@ class OpenWeatherMapperTest {
         assertThat(response.current().description()).isEqualTo("clear sky");
         assertThat(response.current().icon()).isEqualTo("01d");
         assertThat(response.daily()).isEmpty();
+        assertThat(response.alerts()).isEmpty();
     }
 
     @Test
@@ -60,7 +63,8 @@ class OpenWeatherMapperTest {
                                 70,
                                 List.of(new OpenWeatherCondition("light rain", "10d"))
                         )
-                )
+                ),
+                List.of()
         );
 
         WeatherResponse response = mapper.toWeatherResponse(openWeatherResponse, 50.8798, 4.7005);
@@ -72,5 +76,40 @@ class OpenWeatherMapperTest {
         assertThat(response.daily().getFirst().humidity()).isEqualTo(70);
         assertThat(response.daily().getFirst().description()).isEqualTo("light rain");
         assertThat(response.daily().getFirst().icon()).isEqualTo("10d");
+        assertThat(response.alerts()).isEmpty();
+    }
+
+    @Test
+    void mapsWeatherAlerts() {
+        OpenWeatherResponse openWeatherResponse = new OpenWeatherResponse(
+                50.8798,
+                4.7005,
+                new OpenWeatherCurrent(
+                        21.5,
+                        20.8,
+                        65,
+                        List.of(new OpenWeatherCondition("clear sky", "01d"))
+                ),
+                List.of(),
+                List.of(
+                        new OpenWeatherAlert(
+                                "Royal Meteorological Institute",
+                                "Thunderstorm warning",
+                                1719504000L,
+                                1719511200L,
+                                "Thunderstorms expected in the area."
+                        )
+                )
+        );
+
+        WeatherResponse response = mapper.toWeatherResponse(openWeatherResponse, 50.8798, 4.7005);
+
+        assertThat(response.daily()).isEmpty();
+        assertThat(response.alerts()).hasSize(1);
+        assertThat(response.alerts().getFirst().senderName()).isEqualTo("Royal Meteorological Institute");
+        assertThat(response.alerts().getFirst().event()).isEqualTo("Thunderstorm warning");
+        assertThat(response.alerts().getFirst().start()).isEqualTo(1719504000L);
+        assertThat(response.alerts().getFirst().end()).isEqualTo(1719511200L);
+        assertThat(response.alerts().getFirst().description()).isEqualTo("Thunderstorms expected in the area.");
     }
 }

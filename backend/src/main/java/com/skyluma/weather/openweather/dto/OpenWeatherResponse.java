@@ -6,6 +6,7 @@ public record OpenWeatherResponse(
         double lat,
         double lon,
         OpenWeatherCurrent current,
-        List<OpenWeatherDaily> daily
+        List<OpenWeatherDaily> daily,
+        List<OpenWeatherAlert> alerts
 ) {
 }
