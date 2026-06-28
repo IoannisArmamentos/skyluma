@@ -30,9 +30,9 @@
     <label>
       Provider
       <select name="provider" [(ngModel)]="selectedProvider">
-        <option value="">Default</option>
-        <option value="openmeteo">Open-Meteo</option>
-        <option value="openweather">OpenWeather</option>
+        @for (provider of providerOptions; track provider.value) {
+          <option [value]="provider.value">{{ provider.label }}</option>
+        }
       </select>
     </label>
 

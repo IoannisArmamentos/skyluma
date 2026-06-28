@@ -6,6 +6,11 @@ import { FormsModule } from '@angular/forms';
 import { WeatherApi } from '../weather-api';
 import { WeatherProvider, WeatherResponse } from '../weather.models';
 
+interface ProviderOption {
+  value: WeatherProvider | '';
+  label: string;
+}
+
 @Component({
   selector: 'app-weather-page',
   imports: [DatePipe, DecimalPipe, FormsModule],
@@ -15,7 +20,13 @@ import { WeatherProvider, WeatherResponse } from '../weather.models';
 export class WeatherPage {
   latitude = 50.8798;
   longitude = 4.7005;
-  selectedProvider = '';
+  selectedProvider: WeatherProvider | '' = '';
+
+  readonly providerOptions: ProviderOption[] = [
+    { value: '', label: 'Default' },
+    { value: 'openmeteo', label: 'Open-Meteo' },
+    { value: 'openweather', label: 'OpenWeather' },
+  ];
 
   weather?: WeatherResponse;
   loading = false;
@@ -28,9 +39,7 @@ export class WeatherPage {
     this.loading = true;
     this.errorMessage = '';
 
-    const provider = this.selectedProvider
-      ? (this.selectedProvider as WeatherProvider)
-      : undefined;
+    const provider = this.selectedProvider || undefined;
 
     this.weatherApi.getWeather(this.latitude, this.longitude, provider).subscribe({
       next: (weather) => {
@@ -68,12 +77,7 @@ export class WeatherPage {
   }
 
   getProviderLabel(provider: WeatherProvider): string {
-    switch (provider) {
-      case 'openmeteo':
-        return 'Open-Meteo';
-      case 'openweather':
-        return 'OpenWeather';
-    }
+    return this.providerOptions.find((option) => option.value === provider)?.label ?? provider;
   }
 
   private getErrorMessage(error: unknown): string {
