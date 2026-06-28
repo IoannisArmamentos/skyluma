@@ -8,3 +8,6 @@ openweather:
   api-key: test-api-key
   units: metric
   language: en
+
+openmeteo:
+  base-url: https://api.open-meteo.com

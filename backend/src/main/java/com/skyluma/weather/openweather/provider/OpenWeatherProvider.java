@@ -5,8 +5,10 @@ import com.skyluma.weather.forecast.mapper.OpenWeatherMapper;
 import com.skyluma.weather.forecast.provider.WeatherProvider;
 import com.skyluma.weather.openweather.client.OpenWeatherClient;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+@Primary
 @Component
 public class OpenWeatherProvider implements WeatherProvider {
 
