@@ -4,7 +4,7 @@
     <p>Check the current weather, daily forecast, and weather alerts for a location.</p>
   </section>
 
-  <form class="search-form" (ngSubmit)="loadWeather()">
+  <form class="search-form">
     <label>
       Latitude
       <input
@@ -42,7 +42,7 @@
       </select>
     </label>
 
-    <button type="submit" [disabled]="loading || locating">
+    <button type="button" [disabled]="loading || locating" (click)="loadWeather()">
       {{ loading ? 'Loading...' : 'Get weather' }}
     </button>
 
@@ -106,6 +106,10 @@
             <p>{{ alert.senderName }}</p>
           </article>
         }
+      } @else if (!areAlertsAvailableForProvider(weather.provider)) {
+        <p class="info-message">
+          Weather alerts are not available from {{ getProviderLabel(weather.provider) }} yet.
+        </p>
       } @else {
         <p>No weather alerts for this location.</p>
       }
