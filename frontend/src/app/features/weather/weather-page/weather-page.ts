@@ -112,6 +112,119 @@ export class WeatherPage {
     return provider === 'openweather';
   }
 
+  getWeatherIcon(icon: string): string {
+    if (this.isOpenWeatherClear(icon)) {
+      return '☀️';
+    }
+
+    if (this.isOpenWeatherCloudy(icon)) {
+      return '☁️';
+    }
+
+    if (this.isOpenWeatherRain(icon)) {
+      return '🌧️';
+    }
+
+    if (this.isOpenWeatherSnow(icon)) {
+      return '❄️';
+    }
+
+    if (this.isOpenWeatherThunderstorm(icon)) {
+      return '⛈️';
+    }
+
+    if (this.isOpenMeteoClear(icon)) {
+      return '☀️';
+    }
+
+    if (this.isOpenMeteoPartlyCloudy(icon)) {
+      return '⛅';
+    }
+
+    if (this.isOpenMeteoFog(icon)) {
+      return '🌫️';
+    }
+
+    if (this.isOpenMeteoRain(icon)) {
+      return '🌧️';
+    }
+
+    if (this.isOpenMeteoSnow(icon)) {
+      return '❄️';
+    }
+
+    if (this.isOpenMeteoThunderstorm(icon)) {
+      return '⛈️';
+    }
+
+    return '🌤️';
+  }
+
+  private isOpenWeatherClear(icon: string): boolean {
+    return icon.startsWith('01');
+  }
+
+  private isOpenWeatherCloudy(icon: string): boolean {
+    return ['02', '03', '04', '50'].some((code) => icon.startsWith(code));
+  }
+
+  private isOpenWeatherRain(icon: string): boolean {
+    return ['09', '10'].some((code) => icon.startsWith(code));
+  }
+
+  private isOpenWeatherSnow(icon: string): boolean {
+    return icon.startsWith('13');
+  }
+
+  private isOpenWeatherThunderstorm(icon: string): boolean {
+    return icon.startsWith('11');
+  }
+
+  private isOpenMeteoClear(icon: string): boolean {
+    return icon === '0';
+  }
+
+  private isOpenMeteoPartlyCloudy(icon: string): boolean {
+    return ['1', '2', '3'].includes(icon);
+  }
+
+  private isOpenMeteoFog(icon: string): boolean {
+    return ['45', '48'].includes(icon);
+  }
+
+  private isOpenMeteoRain(icon: string): boolean {
+    return [
+      '51',
+      '53',
+      '55',
+      '56',
+      '57',
+      '61',
+      '63',
+      '65',
+      '66',
+      '67',
+      '80',
+      '81',
+      '82',
+    ].includes(icon);
+  }
+
+  private isOpenMeteoSnow(icon: string): boolean {
+    return [
+      '71',
+      '73',
+      '75',
+      '77',
+      '85',
+      '86',
+    ].includes(icon);
+  }
+
+  private isOpenMeteoThunderstorm(icon: string): boolean {
+    return ['95', '96', '99'].includes(icon);
+  }
+
   private areCoordinatesValid(): boolean {
     const latitude = Number(this.latitude);
     const longitude = Number(this.longitude);
