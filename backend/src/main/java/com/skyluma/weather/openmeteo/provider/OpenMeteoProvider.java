@@ -6,8 +6,10 @@ import com.skyluma.weather.openmeteo.client.OpenMeteoClient;
 import com.skyluma.weather.openmeteo.dto.OpenMeteoResponse;
 import com.skyluma.weather.openmeteo.mapper.OpenMeteoMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+@Primary
 @Component
 @RequiredArgsConstructor
 public class OpenMeteoProvider implements WeatherProvider {

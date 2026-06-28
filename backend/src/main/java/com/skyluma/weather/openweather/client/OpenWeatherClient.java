@@ -5,6 +5,7 @@ import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
@@ -17,6 +18,10 @@ public class OpenWeatherClient {
     private final OpenWeatherProperties properties;
 
     public OpenWeatherResponse getWeather(double latitude, double longitude) {
+        if (!StringUtils.hasText(properties.apiKey())) {
+            throw new OpenWeatherClientException("OpenWeather API key is not configured");
+        }
+
         try {
             OpenWeatherResponse response = openWeatherRestClient.get()
                     .uri(uriBuilder -> uriBuilder
