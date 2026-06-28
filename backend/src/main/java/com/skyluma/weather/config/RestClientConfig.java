@@ -8,7 +8,9 @@ import org.springframework.web.client.RestClient;
 public class RestClientConfig {
 
     @Bean
-    public RestClient restClient() {
-        return RestClient.create();
+    public RestClient openWeatherRestClient(OpenWeatherProperties properties) {
+        return RestClient.builder()
+                .baseUrl(properties.baseUrl())
+                .build();
     }
 }

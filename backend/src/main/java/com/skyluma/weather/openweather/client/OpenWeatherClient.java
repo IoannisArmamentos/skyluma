@@ -9,23 +9,25 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class OpenWeatherClient {
 
-    private final RestClient restClient;
+    private final RestClient openWeatherRestClient;
     private final OpenWeatherProperties properties;
 
-    public OpenWeatherClient(RestClient restClient, OpenWeatherProperties properties) {
-        this.restClient = restClient;
+    public OpenWeatherClient(RestClient openWeatherRestClient, OpenWeatherProperties properties) {
+        this.openWeatherRestClient = openWeatherRestClient;
         this.properties = properties;
     }
 
     public OpenWeatherResponse getWeather(double latitude, double longitude) {
         try {
-            return restClient.get()
-                    .uri(properties.baseUrl() + "/onecall?lat={latitude}&lon={longitude}&appid={apiKey}&units={units}&lang={language}",
-                            latitude,
-                            longitude,
-                            properties.apiKey(),
-                            properties.units(),
-                            properties.language())
+            return openWeatherRestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/onecall")
+                            .queryParam("lat", latitude)
+                            .queryParam("lon", longitude)
+                            .queryParam("appid", properties.apiKey())
+                            .queryParam("units", properties.units())
+                            .queryParam("lang", properties.language())
+                            .build())
                     .retrieve()
                     .body(OpenWeatherResponse.class);
         } catch (RestClientException exception) {
