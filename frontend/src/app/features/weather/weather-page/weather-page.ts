@@ -1,8 +1,16 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  NgZone,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import * as L from 'leaflet';
 import { finalize } from 'rxjs';
 
 import { WeatherApi } from '../weather-api';
@@ -19,7 +27,7 @@ interface ProviderOption {
   templateUrl: './weather-page.html',
   styleUrl: './weather-page.scss',
 })
-export class WeatherPage implements OnInit {
+export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
   latitude = 50.8798;
   longitude = 4.7005;
   selectedProvider: WeatherProvider | '' = '';
@@ -35,25 +43,37 @@ export class WeatherPage implements OnInit {
   locating = false;
   errorMessage = '';
 
+  private map?: L.Map;
+  private marker?: L.Marker;
+
   constructor(
     private readonly weatherApi: WeatherApi,
     private readonly changeDetectorRef: ChangeDetectorRef,
+    private readonly ngZone: NgZone,
   ) {}
 
   ngOnInit(): void {
     this.useCurrentLocation();
   }
 
+  ngAfterViewInit(): void {
+    this.initMap();
+  }
+
+  ngOnDestroy(): void {
+    this.map?.remove();
+  }
+
   loadWeather(): void {
     if (!this.areCoordinatesValid()) {
       this.errorMessage = 'Latitude must be between -90 and 90, and longitude must be between -180 and 180.';
-      this.changeDetectorRef.markForCheck();
+      this.changeDetectorRef.detectChanges();
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
-    this.changeDetectorRef.markForCheck();
+    this.changeDetectorRef.detectChanges();
 
     const provider = this.selectedProvider || undefined;
 
@@ -61,17 +81,18 @@ export class WeatherPage implements OnInit {
       .pipe(
         finalize(() => {
           this.loading = false;
-          this.changeDetectorRef.markForCheck();
+          this.changeDetectorRef.detectChanges();
         }),
       )
       .subscribe({
         next: (weather: WeatherResponse) => {
           this.weather = weather;
-          this.changeDetectorRef.markForCheck();
+          this.updateMapMarker();
+          this.changeDetectorRef.detectChanges();
         },
         error: (error: unknown) => {
           this.errorMessage = this.getErrorMessage(error);
-          this.changeDetectorRef.markForCheck();
+          this.changeDetectorRef.detectChanges();
         },
       });
   }
@@ -79,26 +100,31 @@ export class WeatherPage implements OnInit {
   useCurrentLocation(): void {
     if (!navigator.geolocation) {
       this.errorMessage = 'Geolocation is not supported by this browser.';
-      this.changeDetectorRef.markForCheck();
+      this.changeDetectorRef.detectChanges();
       return;
     }
 
     this.locating = true;
     this.errorMessage = '';
-    this.changeDetectorRef.markForCheck();
+    this.changeDetectorRef.detectChanges();
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        this.latitude = Number(position.coords.latitude.toFixed(4));
-        this.longitude = Number(position.coords.longitude.toFixed(4));
-        this.locating = false;
-        this.changeDetectorRef.markForCheck();
-        this.loadWeather();
+        this.ngZone.run(() => {
+          this.latitude = Number(position.coords.latitude.toFixed(4));
+          this.longitude = Number(position.coords.longitude.toFixed(4));
+          this.updateMapMarker();
+          this.locating = false;
+          this.changeDetectorRef.detectChanges();
+          this.loadWeather();
+        });
       },
       () => {
-        this.errorMessage = 'Location access was not allowed. You can enter coordinates manually.';
-        this.locating = false;
-        this.changeDetectorRef.markForCheck();
+        this.ngZone.run(() => {
+          this.errorMessage = 'Location access was not allowed. You can enter coordinates manually.';
+          this.locating = false;
+          this.changeDetectorRef.detectChanges();
+        });
       },
       {
         enableHighAccuracy: false,
@@ -162,6 +188,38 @@ export class WeatherPage implements OnInit {
     }
 
     return '🌤️';
+  }
+
+  private initMap(): void {
+    this.map = L.map('weather-map').setView([this.latitude, this.longitude], 10);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(this.map);
+
+    this.marker = L.marker([this.latitude, this.longitude]).addTo(this.map);
+
+    this.map.on('click', (event: L.LeafletMouseEvent) => {
+      this.ngZone.run(() => {
+        this.latitude = Number(event.latlng.lat.toFixed(4));
+        this.longitude = Number(event.latlng.lng.toFixed(4));
+        this.updateMapMarker();
+        this.changeDetectorRef.detectChanges();
+        this.loadWeather();
+      });
+    });
+
+    setTimeout(() => {
+      this.map?.invalidateSize();
+    });
+  }
+
+  private updateMapMarker(): void {
+    const coordinates: L.LatLngExpression = [this.latitude, this.longitude];
+
+    this.marker?.setLatLng(coordinates);
+    this.map?.setView(coordinates);
+    this.map?.invalidateSize();
   }
 
   private isOpenWeatherClear(icon: string): boolean {

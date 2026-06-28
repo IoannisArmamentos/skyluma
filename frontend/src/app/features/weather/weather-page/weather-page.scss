@@ -75,6 +75,26 @@
   opacity: 0.75;
 }
 
+.map-section {
+  margin-top: 2rem;
+
+  h2 {
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    margin-top: 0;
+    opacity: 0.75;
+  }
+}
+
+.weather-map {
+  height: 360px;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
 .current-weather,
 .daily-forecast,
 .alerts {
@@ -153,6 +173,10 @@ input[type='number']::-webkit-inner-spin-button {
   .weather-page {
     width: min(100% - 1rem, 1120px);
     padding: 1.5rem 0;
+  }
+
+  .weather-map {
+    height: 300px;
   }
 
   .search-form button {
