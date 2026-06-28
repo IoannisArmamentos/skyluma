@@ -27,7 +27,16 @@
       />
     </label>
 
-    <button type="submit" [disabled]="loading">
+    <label>
+      Provider
+      <select name="provider" [(ngModel)]="selectedProvider">
+        <option value="">Default</option>
+        <option value="openmeteo">Open-Meteo</option>
+        <option value="openweather">OpenWeather</option>
+      </select>
+    </label>
+
+    <button type="submit" [disabled]="loading || locating">
       {{ loading ? 'Loading...' : 'Get weather' }}
     </button>
 

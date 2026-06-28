@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { WeatherApi } from '../weather-api';
-import { WeatherResponse } from '../weather.models';
+import { WeatherProvider, WeatherResponse } from '../weather.models';
 
 @Component({
   selector: 'app-weather-page',
@@ -15,6 +15,7 @@ import { WeatherResponse } from '../weather.models';
 export class WeatherPage {
   latitude = 50.8798;
   longitude = 4.7005;
+  selectedProvider = '';
 
   weather?: WeatherResponse;
   loading = false;
@@ -27,7 +28,11 @@ export class WeatherPage {
     this.loading = true;
     this.errorMessage = '';
 
-    this.weatherApi.getWeather(this.latitude, this.longitude).subscribe({
+    const provider = this.selectedProvider
+      ? (this.selectedProvider as WeatherProvider)
+      : undefined;
+
+    this.weatherApi.getWeather(this.latitude, this.longitude, provider).subscribe({
       next: (weather) => {
         this.weather = weather;
         this.loading = false;
