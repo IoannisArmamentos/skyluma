@@ -59,6 +59,7 @@
         </p>
 
         <p>{{ weather.current.description }}</p>
+        <p class="provider">Provider: {{ weather.provider }}</p>
         <p>Feels like {{ weather.current.feelsLike | number: '1.0-1' }}°C</p>
         <p>Humidity {{ weather.current.humidity }}%</p>
       </div>

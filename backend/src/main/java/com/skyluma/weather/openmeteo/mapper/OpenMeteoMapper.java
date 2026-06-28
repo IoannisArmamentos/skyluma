@@ -29,6 +29,7 @@ public class OpenMeteoMapper {
         }
 
         return new WeatherResponse(
+                "openmeteo",
                 new LocationResponse(latitude, longitude),
                 toCurrentWeather(openMeteoResponse.current()),
                 toDailyForecast(openMeteoResponse.daily()),

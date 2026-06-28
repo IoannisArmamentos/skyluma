@@ -83,6 +83,11 @@
   gap: 1rem;
 }
 
+.provider {
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+
 @media (min-width: 720px) {
   .search-form {
     grid-template-columns: 1fr 1fr 1fr auto auto;
