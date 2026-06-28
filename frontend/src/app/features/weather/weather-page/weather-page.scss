@@ -93,6 +93,20 @@
   opacity: 0.7;
 }
 
+.info-message {
+  opacity: 0.75;
+}
+
+input[type='number'] {
+  appearance: textfield;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
 @media (min-width: 720px) {
   .search-form {
     grid-template-columns: 1fr 1fr 1fr auto auto;

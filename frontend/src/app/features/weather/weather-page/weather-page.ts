@@ -1,7 +1,9 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+
+import { finalize } from 'rxjs';
 
 import { WeatherApi } from '../weather-api';
 import { WeatherProvider, WeatherResponse } from '../weather.models';
@@ -33,50 +35,71 @@ export class WeatherPage {
   locating = false;
   errorMessage = '';
 
-  constructor(private readonly weatherApi: WeatherApi) {}
+  constructor(
+    private readonly weatherApi: WeatherApi,
+    private readonly changeDetectorRef: ChangeDetectorRef,
+  ) {}
 
   loadWeather(): void {
     if (!this.areCoordinatesValid()) {
       this.errorMessage = 'Latitude must be between -90 and 90, and longitude must be between -180 and 180.';
+      this.changeDetectorRef.markForCheck();
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
+    this.changeDetectorRef.markForCheck();
 
     const provider = this.selectedProvider || undefined;
 
-    this.weatherApi.getWeather(this.latitude, this.longitude, provider).subscribe({
-      next: (weather) => {
-        this.weather = weather;
-        this.loading = false;
-      },
-      error: (error: unknown) => {
-        this.errorMessage = this.getErrorMessage(error);
-        this.loading = false;
-      },
-    });
+    this.weatherApi.getWeather(Number(this.latitude), Number(this.longitude), provider)
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.changeDetectorRef.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (weather: WeatherResponse) => {
+          this.weather = weather;
+          this.changeDetectorRef.markForCheck();
+        },
+        error: (error: unknown) => {
+          this.errorMessage = this.getErrorMessage(error);
+          this.changeDetectorRef.markForCheck();
+        },
+      });
   }
 
   useCurrentLocation(): void {
     if (!navigator.geolocation) {
       this.errorMessage = 'Geolocation is not supported by this browser.';
+      this.changeDetectorRef.markForCheck();
       return;
     }
 
     this.locating = true;
     this.errorMessage = '';
+    this.changeDetectorRef.markForCheck();
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.latitude = Number(position.coords.latitude.toFixed(4));
         this.longitude = Number(position.coords.longitude.toFixed(4));
         this.locating = false;
+        this.changeDetectorRef.markForCheck();
         this.loadWeather();
       },
       () => {
         this.errorMessage = 'Could not get your current location.';
         this.locating = false;
+        this.changeDetectorRef.markForCheck();
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000,
       },
     );
   }
@@ -85,11 +108,20 @@ export class WeatherPage {
     return this.providerOptions.find((option) => option.value === provider)?.label ?? provider;
   }
 
+  areAlertsAvailableForProvider(provider: WeatherProvider): boolean {
+    return provider === 'openweather';
+  }
+
   private areCoordinatesValid(): boolean {
-    return this.latitude >= -90 &&
-      this.latitude <= 90 &&
-      this.longitude >= -180 &&
-      this.longitude <= 180;
+    const latitude = Number(this.latitude);
+    const longitude = Number(this.longitude);
+
+    return Number.isFinite(latitude) &&
+      Number.isFinite(longitude) &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180;
   }
 
   private getErrorMessage(error: unknown): string {
