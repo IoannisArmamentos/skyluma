@@ -1,4 +1,4 @@
-package com.skyluma.weather.forecast.mapper;
+package com.skyluma.weather.openweather.mapper;
 
 import com.skyluma.weather.forecast.dto.WeatherResponse;
 import com.skyluma.weather.openweather.client.OpenWeatherClientException;
