@@ -1,5 +1,6 @@
 package com.skyluma.weather.common.error;
 
+import com.skyluma.weather.openmeteo.client.OpenMeteoClientException;
 import com.skyluma.weather.openweather.client.OpenWeatherClientException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -41,12 +42,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OpenWeatherClientException.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ApiErrorResponse handleOpenWeatherClientException(OpenWeatherClientException exception) {
-        return new ApiErrorResponse(
-                Instant.now(),
-                HttpStatus.BAD_GATEWAY.value(),
-                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
-                List.of(exception.getMessage())
-        );
+        return badGateway(List.of(exception.getMessage()));
+    }
+
+    @ExceptionHandler(OpenMeteoClientException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ApiErrorResponse handleOpenMeteoClientException(OpenMeteoClientException exception) {
+        return badGateway(List.of(exception.getMessage()));
     }
 
     private ApiErrorResponse badRequest(List<String> messages) {
@@ -54,6 +56,15 @@ public class GlobalExceptionHandler {
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                messages
+        );
+    }
+
+    private ApiErrorResponse badGateway(List<String> messages) {
+        return new ApiErrorResponse(
+                Instant.now(),
+                HttpStatus.BAD_GATEWAY.value(),
+                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
                 messages
         );
     }
