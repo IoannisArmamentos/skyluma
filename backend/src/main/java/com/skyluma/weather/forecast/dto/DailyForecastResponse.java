@@ -1,7 +1,9 @@
 package com.skyluma.weather.forecast.dto;
 
+import java.time.Instant;
+
 public record DailyForecastResponse(
-        long timestamp,
+        Instant dateTime,
         double minTemperature,
         double maxTemperature,
         int humidity,

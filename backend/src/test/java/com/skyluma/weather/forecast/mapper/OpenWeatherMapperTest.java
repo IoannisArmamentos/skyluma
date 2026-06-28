@@ -5,6 +5,7 @@ import com.skyluma.weather.openweather.client.OpenWeatherClientException;
 import com.skyluma.weather.openweather.dto.*;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,7 +68,7 @@ class OpenWeatherMapperTest {
         WeatherResponse response = mapper.toWeatherResponse(openWeatherResponse, 50.8798, 4.7005);
 
         assertThat(response.daily()).hasSize(1);
-        assertThat(response.daily().getFirst().timestamp()).isEqualTo(1719504000L);
+        assertThat(response.daily().getFirst().dateTime()).isEqualTo(Instant.ofEpochSecond(1719504000L));
         assertThat(response.daily().getFirst().minTemperature()).isEqualTo(12.4);
         assertThat(response.daily().getFirst().maxTemperature()).isEqualTo(24.8);
         assertThat(response.daily().getFirst().humidity()).isEqualTo(70);
@@ -105,8 +106,8 @@ class OpenWeatherMapperTest {
         assertThat(response.alerts()).hasSize(1);
         assertThat(response.alerts().getFirst().senderName()).isEqualTo("Royal Meteorological Institute");
         assertThat(response.alerts().getFirst().event()).isEqualTo("Thunderstorm warning");
-        assertThat(response.alerts().getFirst().start()).isEqualTo(1719504000L);
-        assertThat(response.alerts().getFirst().end()).isEqualTo(1719511200L);
+        assertThat(response.alerts().getFirst().start()).isEqualTo(Instant.ofEpochSecond(1719504000L));
+        assertThat(response.alerts().getFirst().end()).isEqualTo(Instant.ofEpochSecond(1719511200L));
         assertThat(response.alerts().getFirst().description()).isEqualTo("Thunderstorms expected in the area.");
     }
 
