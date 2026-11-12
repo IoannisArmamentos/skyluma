@@ -41,6 +41,7 @@ describe('WeatherPage', () => {
     },
     daily: [
       {
+        date: '2026-06-28',
         dateTime: '2026-06-28T00:00:00Z',
         minTemperature: 12.4,
         maxTemperature: 24.8,
@@ -111,6 +112,47 @@ describe('WeatherPage', () => {
     expect(page.textContent).toContain('Daily forecast');
     expect(page.textContent).toContain('Rain');
     expect(page.textContent).toContain('12.4°C / 24.8°C');
+    expect(page.querySelector('.forecast-card h3')?.textContent).toBe('Sun, Jun 28');
+  });
+
+  it('renders calendar dates across a year boundary', () => {
+    weatherApi.response = of({
+      ...weatherResponse,
+      daily: [
+        { ...weatherResponse.daily[0], date: '2025-12-31', dateTime: '2025-12-31T00:00:00Z' },
+        { ...weatherResponse.daily[0], date: '2026-01-01', dateTime: '2026-01-01T00:00:00Z' },
+      ],
+    });
+
+    component.loadWeather();
+    fixture.detectChanges();
+
+    const headings = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.forecast-card h3'),
+      (heading) => heading.textContent,
+    );
+    expect(headings).toEqual(['Wed, Dec 31', 'Thu, Jan 1']);
+  });
+
+  it.each([
+    ['America/Los_Angeles', '2026-01-01', '2026-01-01T00:00:00Z', 'Thu, Jan 1'],
+    ['Pacific/Kiritimati', '2025-12-31', '2025-12-31T23:30:00Z', 'Wed, Dec 31'],
+  ])('renders the forecast date in browser timezone %s', (timezone, date, dateTime, expected) => {
+    vi.stubEnv('TZ', timezone);
+    try {
+      weatherApi.response = of({
+        ...weatherResponse,
+        daily: [{ ...weatherResponse.daily[0], date, dateTime }],
+      });
+
+      component.loadWeather();
+      fixture.detectChanges();
+
+      const heading = (fixture.nativeElement as HTMLElement).querySelector('.forecast-card h3');
+      expect(heading?.textContent).toBe(expected);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('shows a message when alerts are not available from the provider', () => {

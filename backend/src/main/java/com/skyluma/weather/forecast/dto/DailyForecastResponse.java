@@ -1,6 +1,7 @@
 package com.skyluma.weather.forecast.dto;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 public record DailyForecastResponse(
         Instant dateTime,
@@ -8,6 +9,7 @@ public record DailyForecastResponse(
         double maxTemperature,
         Integer humidity,
         String description,
-        String icon
+        String icon,
+        LocalDate date
 ) {
 }

@@ -53,14 +53,18 @@ public class OpenMeteoMapper {
         }
 
         return IntStream.range(0, daily.time().size())
-                .mapToObj(index -> new DailyForecastResponse(
-                        LocalDate.parse(daily.time().get(index)).atStartOfDay().toInstant(ZoneOffset.UTC),
-                        daily.temperatureMin().get(index),
-                        daily.temperatureMax().get(index),
-                        null,
-                        toDescription(daily.weatherCode().get(index)),
-                        String.valueOf(daily.weatherCode().get(index))
-                ))
+                .mapToObj(index -> {
+                    LocalDate date = LocalDate.parse(daily.time().get(index));
+                    return new DailyForecastResponse(
+                            date.atStartOfDay().toInstant(ZoneOffset.UTC),
+                            daily.temperatureMin().get(index),
+                            daily.temperatureMax().get(index),
+                            null,
+                            toDescription(daily.weatherCode().get(index)),
+                            String.valueOf(daily.weatherCode().get(index)),
+                            date
+                    );
+                })
                 .toList();
     }
 

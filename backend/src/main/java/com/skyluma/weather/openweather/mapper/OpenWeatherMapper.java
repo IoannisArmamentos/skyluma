@@ -14,6 +14,9 @@ import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Component
@@ -41,31 +44,49 @@ public class OpenWeatherMapper {
                         currentCondition == null ? null : currentCondition.description(),
                         currentCondition == null ? null : currentCondition.icon()
                 ),
-                mapDailyForecasts(openWeatherResponse.daily()),
+                mapDailyForecasts(openWeatherResponse),
                 mapAlerts(openWeatherResponse.alerts())
         );
     }
 
-    private List<DailyForecastResponse> mapDailyForecasts(List<OpenWeatherDaily> dailyForecasts) {
-        if (dailyForecasts == null) {
+    private List<DailyForecastResponse> mapDailyForecasts(OpenWeatherResponse response) {
+        List<OpenWeatherDaily> dailyForecasts = response.daily();
+        if (dailyForecasts == null || dailyForecasts.isEmpty()) {
             return List.of();
         }
 
+        ZoneId timezone = locationTimezone(response);
         return dailyForecasts.stream()
-                .map(this::mapDailyForecast)
+                .map(day -> mapDailyForecast(day, timezone))
                 .toList();
     }
 
-    private DailyForecastResponse mapDailyForecast(OpenWeatherDaily dailyForecast) {
+    private ZoneId locationTimezone(OpenWeatherResponse response) {
+        try {
+            if (response.timezone() != null && !response.timezone().isBlank()) {
+                return ZoneId.of(response.timezone());
+            }
+            if (response.timezoneOffset() != null) {
+                return ZoneOffset.ofTotalSeconds(response.timezoneOffset());
+            }
+        } catch (DateTimeException exception) {
+            throw new OpenWeatherClientException("OpenWeather response has invalid timezone data");
+        }
+        throw new OpenWeatherClientException("OpenWeather response is missing timezone data");
+    }
+
+    private DailyForecastResponse mapDailyForecast(OpenWeatherDaily dailyForecast, ZoneId timezone) {
         OpenWeatherCondition condition = getFirstCondition(dailyForecast.weather());
+        Instant timestamp = Instant.ofEpochSecond(dailyForecast.dt());
 
         return new DailyForecastResponse(
-                Instant.ofEpochSecond(dailyForecast.dt()),
+                timestamp,
                 dailyForecast.temp().min(),
                 dailyForecast.temp().max(),
                 dailyForecast.humidity(),
                 condition == null ? null : condition.description(),
-                condition == null ? null : condition.icon()
+                condition == null ? null : condition.icon(),
+                timestamp.atZone(timezone).toLocalDate()
         );
     }
 

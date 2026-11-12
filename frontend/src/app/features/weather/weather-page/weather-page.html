@@ -85,9 +85,9 @@
       <h2>Daily forecast</h2>
 
       <div class="forecast-grid">
-        @for (day of weather.daily; track day.dateTime) {
+        @for (day of weather.daily; track day.date) {
           <article class="forecast-card">
-            <h3>{{ day.dateTime | date: 'EEE, MMM d' }}</h3>
+            <h3>{{ day.date | date: 'EEE, MMM d' }}</h3>
             <p class="forecast-icon">{{ getWeatherIcon(day.icon) }}</p>
             <p>{{ day.description }}</p>
             <p>

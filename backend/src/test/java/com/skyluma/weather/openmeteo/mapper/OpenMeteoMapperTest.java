@@ -8,6 +8,7 @@ import com.skyluma.weather.openmeteo.dto.OpenMeteoResponse;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +75,7 @@ class OpenMeteoMapperTest {
         WeatherResponse response = mapper.toWeatherResponse(openMeteoResponse, 50.8798, 4.7005);
 
         assertThat(response.daily()).hasSize(1);
+        assertThat(response.daily().getFirst().date()).isEqualTo(LocalDate.of(2026, 6, 28));
         assertThat(response.daily().getFirst().dateTime()).isEqualTo(Instant.parse("2026-06-28T00:00:00Z"));
         assertThat(response.daily().getFirst().minTemperature()).isEqualTo(12.4);
         assertThat(response.daily().getFirst().maxTemperature()).isEqualTo(24.8);
@@ -81,6 +83,19 @@ class OpenMeteoMapperTest {
         assertThat(response.daily().getFirst().description()).isEqualTo("Rain");
         assertThat(response.daily().getFirst().icon()).isEqualTo("61");
         assertThat(response.alerts()).isEmpty();
+    }
+
+    @Test
+    void keepsCalendarDatesAcrossYearBoundary() {
+        OpenMeteoResponse providerResponse = new OpenMeteoResponse(50, 4,
+                new OpenMeteoCurrent("2025-12-31T12:00", 10, 9, 80, 0),
+                new OpenMeteoDaily(List.of("2025-12-31", "2026-01-01"),
+                        List.of(1.0, 2.0), List.of(5.0, 6.0), List.of(0, 1)));
+
+        WeatherResponse response = mapper.toWeatherResponse(providerResponse, 50, 4);
+
+        assertThat(response.daily()).extracting(day -> day.date())
+                .containsExactly(LocalDate.of(2025, 12, 31), LocalDate.of(2026, 1, 1));
     }
 
     @Test
