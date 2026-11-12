@@ -11,6 +11,16 @@ public record OpenWeatherCurrent(
         Double feelsLike,
 
         Integer humidity,
-        List<OpenWeatherCondition> weather
+        List<OpenWeatherCondition> weather,
+        @JsonProperty("wind_speed") Double windSpeed,
+        @JsonProperty("wind_gust") Double windGusts,
+        @JsonProperty("wind_deg") Integer windDirection,
+        Double pressure,
+        Long sunrise,
+        Long sunset
 ) {
+    public OpenWeatherCurrent(Double temp, Double feelsLike, Integer humidity,
+                              List<OpenWeatherCondition> weather) {
+        this(temp, feelsLike, humidity, weather, null, null, null, null, null, null);
+    }
 }

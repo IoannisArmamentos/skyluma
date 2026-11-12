@@ -10,6 +10,12 @@ public record DailyForecastResponse(
         Integer humidity,
         String description,
         String icon,
-        LocalDate date
+        LocalDate date,
+        Instant sunrise,
+        Instant sunset
 ) {
+    public DailyForecastResponse(Instant dateTime, double minTemperature, double maxTemperature,
+                                 Integer humidity, String description, String icon, LocalDate date) {
+        this(dateTime, minTemperature, maxTemperature, humidity, description, icon, date, null, null);
+    }
 }

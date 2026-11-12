@@ -31,6 +31,9 @@ public record OpenWeatherProperties(
         Duration readTimeout
 ) {
     public OpenWeatherProperties {
+        if (!"metric".equals(units)) {
+            throw new IllegalArgumentException("OpenWeather units must be metric for the normalized API");
+        }
         if (connectTimeout == null || connectTimeout.isZero() || connectTimeout.isNegative()
                 || readTimeout == null || readTimeout.isZero() || readTimeout.isNegative()) {
             throw new IllegalArgumentException("OpenWeather timeouts must be positive");

@@ -55,6 +55,14 @@ class ProviderTimeoutPropertiesTest {
                 .hasMessage("OpenWeather timeouts must be positive");
     }
 
+    @Test
+    void rejectsOpenWeatherUnitsThatWouldMixMeasurements() {
+        assertThatThrownBy(() -> bindOpenWeather(Map.of("units", "imperial")))
+                .isInstanceOf(BindException.class)
+                .rootCause()
+                .hasMessage("OpenWeather units must be metric for the normalized API");
+    }
+
     private OpenMeteoProperties bindOpenMeteo(Map<String, String> timeouts) {
         Map<String, String> properties = new HashMap<>();
         properties.put("openmeteo.base-url", "https://api.open-meteo.com");

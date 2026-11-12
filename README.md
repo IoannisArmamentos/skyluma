@@ -201,6 +201,15 @@ The weather response includes:
 3. current weather
 4. daily forecast
 5. weather alerts when the selected provider gives them
+6. up to 48 hourly forecasts, location timezone, measurement units, and provider capabilities
+
+`current.pressure` and `hourly[].pressure` are **mean sea-level atmospheric
+pressure**, in hPa for both providers. `hourly[].precipitationAmount` is the
+preceding hour's total in mm; a null value means the amount is unavailable,
+while zero means a confirmed dry hour. `utcOffsetSeconds` is the provider's
+current/reference offset, not a fixed offset for every forecast hour. Use the
+IANA `timezone` with each hourly UTC `time` when displaying future local times
+across daylight-saving transitions.
 
 Each daily forecast has a `date` in `YYYY-MM-DD` format for the forecast
 location's calendar day. Display this value as a date, without converting it

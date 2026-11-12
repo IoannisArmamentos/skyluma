@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record OpenMeteoDaily(
-        List<String> time,
+        List<?> time,
 
         @JsonProperty("temperature_2m_min")
         List<Double> temperatureMin,
@@ -14,6 +14,12 @@ public record OpenMeteoDaily(
         List<Double> temperatureMax,
 
         @JsonProperty("weather_code")
-        List<Integer> weatherCode
+        List<Integer> weatherCode,
+        List<Long> sunrise,
+        List<Long> sunset
 ) {
+    public OpenMeteoDaily(List<?> time, List<Double> temperatureMin, List<Double> temperatureMax,
+                          List<Integer> weatherCode) {
+        this(time, temperatureMin, temperatureMax, weatherCode, null, null);
+    }
 }
