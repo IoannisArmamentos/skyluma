@@ -17,8 +17,8 @@ export interface CurrentWeatherResponse {
   temperature: number;
   feelsLike: number;
   humidity: number;
-  description: string;
-  icon: string;
+  description: string | null;
+  icon: string | null;
 }
 
 export interface DailyForecastResponse {
@@ -28,8 +28,8 @@ export interface DailyForecastResponse {
   minTemperature: number;
   maxTemperature: number;
   humidity: number | null;
-  description: string;
-  icon: string;
+  description: string | null;
+  icon: string | null;
 }
 
 export interface WeatherAlertResponse {
@@ -37,5 +37,5 @@ export interface WeatherAlertResponse {
   event: string;
   start: string;
   end: string;
-  description: string;
+  description: string | null;
 }
