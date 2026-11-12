@@ -22,6 +22,8 @@ export interface CurrentWeatherResponse {
 }
 
 export interface DailyForecastResponse {
+  date: string;
+  /** Provider timestamp kept for API compatibility; display `date` for the location's forecast day. */
   dateTime: string;
   minTemperature: number;
   maxTemperature: number;

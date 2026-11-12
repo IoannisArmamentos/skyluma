@@ -202,6 +202,15 @@ The weather response includes:
 4. daily forecast
 5. weather alerts when the selected provider gives them
 
+Each daily forecast has a `date` in `YYYY-MM-DD` format for the forecast
+location's calendar day. Display this value as a date, without converting it
+through the viewer's timezone. The existing `dateTime` field remains for API
+compatibility: Open-Meteo uses a synthetic UTC-midnight timestamp, while
+OpenWeather uses the provider's actual UTC forecast timestamp. OpenWeather's
+`date` is derived using the forecast location's timezone (or its UTC offset
+when a timezone name is unavailable). Alert `start` and `end` values remain
+timestamps.
+
 ## Tests and checks
 
 ### Backend tests
