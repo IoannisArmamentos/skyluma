@@ -10,15 +10,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import * as L from 'leaflet';
+import { LeafletMap, Marker, TileLayer, type LatLngExpression } from 'leaflet';
 import { finalize } from 'rxjs';
 
 import { WeatherApi } from '../weather-api';
 import { WeatherProvider, WeatherResponse } from '../weather.models';
-
-// Leaflet finds its default marker images through leaflet.css, which fails when the build
-// renames assets. The images are copied to /leaflet/ by angular.json instead.
-const MARKER_ICON = new L.Icon.Default({ imagePath: 'leaflet/' });
 
 interface ProviderOption {
   value: WeatherProvider | '';
@@ -47,8 +43,8 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
   locating = false;
   errorMessage = '';
 
-  private map?: L.Map;
-  private marker?: L.Marker;
+  private map?: LeafletMap;
+  private marker?: Marker;
 
   constructor(
     private readonly weatherApi: WeatherApi,
@@ -195,15 +191,15 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initMap(): void {
-    this.map = L.map('weather-map').setView([this.latitude, this.longitude], 10);
+    this.map = new LeafletMap('weather-map').setView([this.latitude, this.longitude], 10);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    new TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.map);
 
-    this.marker = L.marker([this.latitude, this.longitude], { icon: MARKER_ICON }).addTo(this.map);
+    this.marker = new Marker([this.latitude, this.longitude]).addTo(this.map);
 
-    this.map.on('click', (event: L.LeafletMouseEvent) => {
+    this.map.on('click', (event) => {
       this.ngZone.run(() => {
         this.latitude = Number(event.latlng.lat.toFixed(4));
         this.longitude = Number(event.latlng.lng.toFixed(4));
@@ -219,7 +215,7 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateMapMarker(): void {
-    const coordinates: L.LatLngExpression = [this.latitude, this.longitude];
+    const coordinates: LatLngExpression = [this.latitude, this.longitude];
 
     this.marker?.setLatLng(coordinates);
     this.map?.setView(coordinates);

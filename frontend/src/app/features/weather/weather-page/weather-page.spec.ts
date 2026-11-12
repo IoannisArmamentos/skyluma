@@ -5,7 +5,7 @@ import { WeatherApi } from '../weather-api';
 import { WeatherProvider, WeatherResponse } from '../weather.models';
 import { WeatherPage } from './weather-page';
 
-import * as L from 'leaflet';
+import { LatLng, LeafletMap, TileLayer } from 'leaflet';
 
 interface WeatherApiMock {
   calls: Array<{
@@ -54,6 +54,11 @@ describe('WeatherPage', () => {
   };
 
   beforeEach(async () => {
+    vi.stubGlobal('ResizeObserver', class {
+      observe(): void {}
+      disconnect(): void {}
+    });
+
     weatherApi = {
       calls: [],
       response: of(weatherResponse),
@@ -82,6 +87,10 @@ describe('WeatherPage', () => {
     fixture = TestBed.createComponent(WeatherPage);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('loads weather for the current location when the page opens', () => {
@@ -248,11 +257,11 @@ describe('WeatherPage', () => {
   });
 
   it('uses the OpenStreetMap tile server with linked attribution', () => {
-    const map = (component as unknown as { map: L.Map }).map;
-    const tileLayers: L.TileLayer[] = [];
+    const map = (component as unknown as { map: LeafletMap }).map;
+    const tileLayers: TileLayer[] = [];
 
     map.eachLayer((layer) => {
-      if (layer instanceof L.TileLayer) {
+      if (layer instanceof TileLayer) {
         tileLayers.push(layer);
       }
     });
@@ -270,23 +279,21 @@ describe('WeatherPage', () => {
     expect(attributionLink?.textContent).toBe('OpenStreetMap');
   });
 
-  it('loads the marker images from the bundled Leaflet assets', () => {
+  it('uses the built-in marker SVG without external image assets', () => {
     const page = fixture.nativeElement as HTMLElement;
     const markerIcon = page.querySelector<HTMLImageElement>('.leaflet-marker-icon');
-    const markerShadow = page.querySelector<HTMLImageElement>('.leaflet-marker-shadow');
-
-    expect(markerIcon?.getAttribute('src')).toBe('leaflet/marker-icon.png');
+    expect(markerIcon?.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/);
     expect(markerIcon?.getAttribute('alt')).toBe('Marker');
-    expect(markerShadow?.getAttribute('src')).toBe('leaflet/marker-shadow.png');
+    expect(page.querySelector('.leaflet-marker-shadow')).toBeNull();
   });
 
   it('loads weather when the map is clicked', () => {
     weatherApi.calls = [];
 
-    const map = (component as unknown as { map: L.Map }).map;
+    const map = (component as unknown as { map: LeafletMap }).map;
 
     map.fire('click', {
-      latlng: L.latLng(51.12346, 4.98766),
+      latlng: new LatLng(51.12346, 4.98766),
     });
 
     fixture.detectChanges();
