@@ -205,6 +205,39 @@ describe('WeatherPage', () => {
     expect(page.querySelector('#weather-map')).not.toBeNull();
   });
 
+  it('uses the OpenStreetMap tile server with linked attribution', () => {
+    const map = (component as unknown as { map: L.Map }).map;
+    const tileLayers: L.TileLayer[] = [];
+
+    map.eachLayer((layer) => {
+      if (layer instanceof L.TileLayer) {
+        tileLayers.push(layer);
+      }
+    });
+
+    expect(tileLayers.length).toBe(1);
+    expect((tileLayers[0] as unknown as { _url: string })._url).toBe(
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    );
+
+    const page = fixture.nativeElement as HTMLElement;
+    const attributionLink = page.querySelector<HTMLAnchorElement>(
+      '.leaflet-control-attribution a[href="https://www.openstreetmap.org/copyright"]',
+    );
+
+    expect(attributionLink?.textContent).toBe('OpenStreetMap');
+  });
+
+  it('loads the marker images from the bundled Leaflet assets', () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const markerIcon = page.querySelector<HTMLImageElement>('.leaflet-marker-icon');
+    const markerShadow = page.querySelector<HTMLImageElement>('.leaflet-marker-shadow');
+
+    expect(markerIcon?.getAttribute('src')).toBe('leaflet/marker-icon.png');
+    expect(markerIcon?.getAttribute('alt')).toBe('Marker');
+    expect(markerShadow?.getAttribute('src')).toBe('leaflet/marker-shadow.png');
+  });
+
   it('loads weather when the map is clicked', () => {
     weatherApi.calls = [];
 

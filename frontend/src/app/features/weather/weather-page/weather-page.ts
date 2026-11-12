@@ -16,6 +16,10 @@ import { finalize } from 'rxjs';
 import { WeatherApi } from '../weather-api';
 import { WeatherProvider, WeatherResponse } from '../weather.models';
 
+// Leaflet finds its default marker images through leaflet.css, which fails when the build
+// renames assets. The images are copied to /leaflet/ by angular.json instead.
+const MARKER_ICON = new L.Icon.Default({ imagePath: 'leaflet/' });
+
 interface ProviderOption {
   value: WeatherProvider | '';
   label: string;
@@ -193,11 +197,11 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
   private initMap(): void {
     this.map = L.map('weather-map').setView([this.latitude, this.longitude], 10);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.map);
 
-    this.marker = L.marker([this.latitude, this.longitude]).addTo(this.map);
+    this.marker = L.marker([this.latitude, this.longitude], { icon: MARKER_ICON }).addTo(this.map);
 
     this.map.on('click', (event: L.LeafletMouseEvent) => {
       this.ngZone.run(() => {
