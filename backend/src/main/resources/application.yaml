@@ -11,13 +11,9 @@ skyluma:
 
 openweather:
   base-url: https://api.openweathermap.org/data/3.0
-  connect-timeout: 3s
-  read-timeout: 10s
   api-key: ${OPENWEATHER_API_KEY:}
   units: metric
   language: en
 
 openmeteo:
   base-url: https://api.open-meteo.com
-  connect-timeout: 3s
-  read-timeout: 10s

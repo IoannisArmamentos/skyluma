@@ -2,8 +2,10 @@ package com.skyluma.weather.config;
 
 import jakarta.validation.constraints.NotBlank;
 import java.time.Duration;
-import org.springframework.boot.context.properties.bind.DefaultValue;
+import java.time.temporal.ChronoUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.boot.convert.DurationUnit;
 import org.springframework.validation.annotation.Validated;
 
 @Validated
@@ -11,8 +13,14 @@ import org.springframework.validation.annotation.Validated;
 public record OpenMeteoProperties(
         @NotBlank(message = "Open-Meteo base URL must not be blank")
         String baseUrl,
-        @DefaultValue("3s") Duration connectTimeout,
-        @DefaultValue("10s") Duration readTimeout
+
+        @DefaultValue("3s")
+        @DurationUnit(ChronoUnit.SECONDS)
+        Duration connectTimeout,
+
+        @DefaultValue("10s")
+        @DurationUnit(ChronoUnit.SECONDS)
+        Duration readTimeout
 ) {
     public OpenMeteoProperties {
         if (connectTimeout == null || connectTimeout.isZero() || connectTimeout.isNegative()

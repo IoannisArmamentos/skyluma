@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -143,13 +144,44 @@ class OpenMeteoMapperTest {
     }
 
     @Test
-    void rejectsIncompleteDailyArrays() {
+    void keepsDaysPresentInAllDailyArrays() {
         OpenMeteoResponse response = new OpenMeteoResponse(50, 4,
                 new OpenMeteoCurrent("2026-06-28T14:00", 21.5, 20.8, 65, 1),
-                new OpenMeteoDaily(List.of("2026-06-28"), List.of(), List.of(24.8), List.of(1)));
+                new OpenMeteoDaily(List.of("2026-06-28", "2026-06-29"), List.of(12.4),
+                        List.of(24.8, 25.1), List.of(1, 3)));
 
-        assertThatThrownBy(() -> mapper.toWeatherResponse(response, 50, 4))
-                .isInstanceOf(OpenMeteoClientException.class)
-                .hasMessage("Open-Meteo response has incomplete daily forecast data");
+        WeatherResponse weatherResponse = mapper.toWeatherResponse(response, 50, 4);
+
+        assertThat(weatherResponse.current().temperature()).isEqualTo(21.5);
+        assertThat(weatherResponse.daily()).extracting(day -> day.date())
+                .containsExactly(LocalDate.of(2026, 6, 28));
+    }
+
+    @Test
+    void skipsDaysWithMissingValuesOrInvalidDates() {
+        OpenMeteoResponse response = new OpenMeteoResponse(50, 4,
+                new OpenMeteoCurrent("2026-06-28T14:00", 21.5, 20.8, 65, 1),
+                new OpenMeteoDaily(
+                        List.of("2026-06-28", "2026-06-29", "not-a-date", "2026-07-01"),
+                        Arrays.asList(12.4, null, 13.0, 14.0),
+                        List.of(24.8, 25.1, 26.0, 27.0),
+                        List.of(1, 3, 61, 0)));
+
+        WeatherResponse weatherResponse = mapper.toWeatherResponse(response, 50, 4);
+
+        assertThat(weatherResponse.daily()).extracting(day -> day.date())
+                .containsExactly(LocalDate.of(2026, 6, 28), LocalDate.of(2026, 7, 1));
+    }
+
+    @Test
+    void keepsCurrentWeatherWhenADailyArrayIsMissing() {
+        OpenMeteoResponse response = new OpenMeteoResponse(50, 4,
+                new OpenMeteoCurrent("2026-06-28T14:00", 21.5, 20.8, 65, 1),
+                new OpenMeteoDaily(List.of("2026-06-28"), null, List.of(24.8), List.of(1)));
+
+        WeatherResponse weatherResponse = mapper.toWeatherResponse(response, 50, 4);
+
+        assertThat(weatherResponse.current().temperature()).isEqualTo(21.5);
+        assertThat(weatherResponse.daily()).isEmpty();
     }
 }

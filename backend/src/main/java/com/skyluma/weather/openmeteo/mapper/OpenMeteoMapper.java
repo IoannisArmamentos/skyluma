@@ -9,14 +9,17 @@ import com.skyluma.weather.openmeteo.client.OpenMeteoClientException;
 import com.skyluma.weather.openmeteo.dto.OpenMeteoCurrent;
 import com.skyluma.weather.openmeteo.dto.OpenMeteoDaily;
 import com.skyluma.weather.openmeteo.dto.OpenMeteoResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
+@Slf4j
 @Component
 public class OpenMeteoMapper {
 
@@ -54,37 +57,52 @@ public class OpenMeteoMapper {
     }
 
     private List<DailyForecastResponse> toDailyForecast(OpenMeteoDaily daily) {
-        if (daily == null) {
+        if (daily == null || daily.time() == null || daily.temperatureMin() == null
+                || daily.temperatureMax() == null || daily.weatherCode() == null) {
             return List.of();
         }
-        if (daily.time() == null || daily.temperatureMin() == null || daily.temperatureMax() == null
-                || daily.weatherCode() == null || daily.temperatureMin().size() != daily.time().size()
-                || daily.temperatureMax().size() != daily.time().size()
-                || daily.weatherCode().size() != daily.time().size()) {
-            throw new OpenMeteoClientException("Open-Meteo response has incomplete daily forecast data");
+
+        int days = Math.min(
+                Math.min(daily.time().size(), daily.temperatureMin().size()),
+                Math.min(daily.temperatureMax().size(), daily.weatherCode().size())
+        );
+        List<DailyForecastResponse> forecast = IntStream.range(0, days)
+                .mapToObj(index -> toDailyForecast(daily, index))
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (forecast.size() < daily.time().size()) {
+            log.warn("Skipped {} incomplete Open-Meteo daily forecast entries", daily.time().size() - forecast.size());
         }
+        return forecast;
+    }
+
+    // Returns null for a day with missing values or an invalid date, so the other days are kept.
+    private DailyForecastResponse toDailyForecast(OpenMeteoDaily daily, int index) {
+        String time = daily.time().get(index);
+        Double minTemperature = daily.temperatureMin().get(index);
+        Double maxTemperature = daily.temperatureMax().get(index);
+        Integer weatherCode = daily.weatherCode().get(index);
+        if (time == null || minTemperature == null || maxTemperature == null || weatherCode == null) {
+            return null;
+        }
+
+        LocalDate date;
         try {
-            return IntStream.range(0, daily.time().size())
-                    .mapToObj(index -> {
-                        if (daily.time().get(index) == null || daily.temperatureMin().get(index) == null
-                                || daily.temperatureMax().get(index) == null || daily.weatherCode().get(index) == null) {
-                            throw new OpenMeteoClientException("Open-Meteo response has incomplete daily forecast data");
-                        }
-                        LocalDate date = LocalDate.parse(daily.time().get(index));
-                        return new DailyForecastResponse(
-                                date.atStartOfDay().toInstant(ZoneOffset.UTC),
-                                daily.temperatureMin().get(index),
-                                daily.temperatureMax().get(index),
-                                null,
-                                toDescription(daily.weatherCode().get(index)),
-                                String.valueOf(daily.weatherCode().get(index)),
-                                date
-                        );
-                    })
-                    .toList();
+            date = LocalDate.parse(time);
         } catch (DateTimeParseException exception) {
-            throw new OpenMeteoClientException("Open-Meteo response has an invalid daily forecast date");
+            return null;
         }
+
+        return new DailyForecastResponse(
+                date.atStartOfDay().toInstant(ZoneOffset.UTC),
+                minTemperature,
+                maxTemperature,
+                null,
+                toDescription(weatherCode),
+                String.valueOf(weatherCode),
+                date
+        );
     }
 
     private String toDescription(int weatherCode) {

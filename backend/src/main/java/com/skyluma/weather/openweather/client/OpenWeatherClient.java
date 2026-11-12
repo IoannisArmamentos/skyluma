@@ -4,10 +4,12 @@ import com.skyluma.weather.config.OpenWeatherProperties;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Slf4j
 @Component
@@ -40,8 +42,14 @@ public class OpenWeatherClient {
             }
 
             return response;
+        } catch (RestClientResponseException exception) {
+            log.warn("OpenWeather request failed with HTTP status {}", exception.getStatusCode().value());
+            throw new OpenWeatherClientException("Could not fetch weather data from OpenWeather");
         } catch (RestClientException exception) {
-            log.warn("Failed to fetch weather data from OpenWeather: {}", exception.getClass().getSimpleName());
+            // Exception messages can contain request URLs or response content, so only types are logged.
+            log.warn("OpenWeather request failed: {} caused by {}",
+                    exception.getClass().getSimpleName(),
+                    NestedExceptionUtils.getMostSpecificCause(exception).getClass().getSimpleName());
             throw new OpenWeatherClientException("Could not fetch weather data from OpenWeather");
         }
     }
