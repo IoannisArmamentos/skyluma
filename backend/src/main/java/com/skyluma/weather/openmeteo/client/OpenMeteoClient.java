@@ -3,9 +3,11 @@ package com.skyluma.weather.openmeteo.client;
 import com.skyluma.weather.openmeteo.dto.OpenMeteoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Slf4j
 @Component
@@ -33,8 +35,14 @@ public class OpenMeteoClient {
             }
 
             return response;
+        } catch (RestClientResponseException exception) {
+            log.warn("Open-Meteo request failed with HTTP status {}", exception.getStatusCode().value());
+            throw new OpenMeteoClientException("Could not fetch weather data from Open-Meteo");
         } catch (RestClientException exception) {
-            log.warn("Failed to fetch weather data from Open-Meteo", exception);
+            // Exception messages can contain request URLs or response content, so only types are logged.
+            log.warn("Open-Meteo request failed: {} caused by {}",
+                    exception.getClass().getSimpleName(),
+                    NestedExceptionUtils.getMostSpecificCause(exception).getClass().getSimpleName());
             throw new OpenMeteoClientException("Could not fetch weather data from Open-Meteo");
         }
     }

@@ -4,6 +4,7 @@ import com.skyluma.weather.openmeteo.client.OpenMeteoClientException;
 import com.skyluma.weather.openweather.client.OpenWeatherClientException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +15,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.Instant;
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -49,12 +51,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(OpenWeatherClientException.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ApiErrorResponse handleOpenWeatherClientException(OpenWeatherClientException exception) {
+        log.warn("Weather provider error: {}", exception.getMessage());
         return badGateway(List.of(exception.getMessage()));
     }
 
     @ExceptionHandler(OpenMeteoClientException.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ApiErrorResponse handleOpenMeteoClientException(OpenMeteoClientException exception) {
+        log.warn("Weather provider error: {}", exception.getMessage());
         return badGateway(List.of(exception.getMessage()));
     }
 

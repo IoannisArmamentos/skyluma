@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,9 +92,9 @@ class OpenWeatherMapperTest {
                     ? Instant.parse("2026-01-01T00:30:00Z")
                     : Instant.parse("2025-12-31T23:30:00Z");
             OpenWeatherResponse providerResponse = new OpenWeatherResponse(50, 4, timezone,
-                    null, new OpenWeatherCurrent(10, 9, 80, List.of()),
+                    null, new OpenWeatherCurrent(10.0, 9.0, 80, List.of()),
                     List.of(new OpenWeatherDaily(sample.getEpochSecond(),
-                            new OpenWeatherTemperature(1, 5), 70, List.of())), List.of());
+                            new OpenWeatherTemperature(1.0, 5.0), 70, List.of())), List.of());
 
             WeatherResponse response = mapper.toWeatherResponse(providerResponse, 50, 4);
 
@@ -111,9 +112,9 @@ class OpenWeatherMapperTest {
                     ? Instant.parse("2025-12-31T23:30:00Z")
                     : Instant.parse("2026-01-01T00:30:00Z");
             OpenWeatherResponse providerResponse = new OpenWeatherResponse(50, 4, null, offsetSeconds,
-                    new OpenWeatherCurrent(10, 9, 80, List.of()),
+                    new OpenWeatherCurrent(10.0, 9.0, 80, List.of()),
                     List.of(new OpenWeatherDaily(sample.getEpochSecond(),
-                            new OpenWeatherTemperature(1, 5), 70, List.of())), List.of());
+                            new OpenWeatherTemperature(1.0, 5.0), 70, List.of())), List.of());
 
             WeatherResponse response = mapper.toWeatherResponse(providerResponse, 50, 4);
 
@@ -126,9 +127,9 @@ class OpenWeatherMapperTest {
     @Test
     void rejectsDailyForecastWithoutLocationTimezone() {
         OpenWeatherResponse providerResponse = new OpenWeatherResponse(50, 4, null, null,
-                new OpenWeatherCurrent(10, 9, 80, List.of()),
+                new OpenWeatherCurrent(10.0, 9.0, 80, List.of()),
                 List.of(new OpenWeatherDaily(Instant.parse("2026-01-01T00:30:00Z").getEpochSecond(),
-                        new OpenWeatherTemperature(1, 5), 70, List.of())), List.of());
+                        new OpenWeatherTemperature(1.0, 5.0), 70, List.of())), List.of());
 
         assertThatThrownBy(() -> mapper.toWeatherResponse(providerResponse, 50, 4))
                 .isInstanceOf(OpenWeatherClientException.class)
@@ -186,5 +187,75 @@ class OpenWeatherMapperTest {
         assertThatThrownBy(() -> mapper.toWeatherResponse(openWeatherResponse, 50.8798, 4.7005))
                 .isInstanceOf(OpenWeatherClientException.class)
                 .hasMessage("OpenWeather response is missing current weather data");
+    }
+
+    @Test
+    void rejectsMissingCurrentTemperature() {
+        OpenWeatherResponse response = new OpenWeatherResponse(50, 4, "Europe/Brussels", 7200,
+                new OpenWeatherCurrent(null, 20.8, 65, List.of()), List.of(), List.of());
+
+        assertThatThrownBy(() -> mapper.toWeatherResponse(response, 50, 4))
+                .isInstanceOf(OpenWeatherClientException.class)
+                .hasMessage("OpenWeather response has incomplete current weather data");
+    }
+
+    @Test
+    void skipsDailyForecastWithoutTemperature() {
+        OpenWeatherResponse response = new OpenWeatherResponse(50, 4, "Europe/Brussels", 7200,
+                new OpenWeatherCurrent(21.5, 20.8, 65, List.of()),
+                List.of(
+                        new OpenWeatherDaily(1719504000L, null, 70, List.of()),
+                        new OpenWeatherDaily(1719590400L, new OpenWeatherTemperature(12.0, 22.0), 60, List.of())
+                ),
+                List.of());
+
+        WeatherResponse weatherResponse = mapper.toWeatherResponse(response, 50, 4);
+
+        assertThat(weatherResponse.current().temperature()).isEqualTo(21.5);
+        assertThat(weatherResponse.daily()).hasSize(1);
+        assertThat(weatherResponse.daily().getFirst().dateTime()).isEqualTo(Instant.ofEpochSecond(1719590400L));
+    }
+
+    @Test
+    void keepsDailyForecastWithoutHumidity() {
+        OpenWeatherResponse response = new OpenWeatherResponse(50, 4, "Europe/Brussels", 7200,
+                new OpenWeatherCurrent(21.5, 20.8, 65, List.of()),
+                List.of(new OpenWeatherDaily(1719504000L, new OpenWeatherTemperature(12.0, 22.0), null, List.of())),
+                List.of());
+
+        WeatherResponse weatherResponse = mapper.toWeatherResponse(response, 50, 4);
+
+        assertThat(weatherResponse.daily()).hasSize(1);
+        assertThat(weatherResponse.daily().getFirst().humidity()).isNull();
+    }
+
+    @Test
+    void skipsIncompleteAlertsAndKeepsValidOnes() {
+        OpenWeatherResponse response = new OpenWeatherResponse(50, 4, "Europe/Brussels", 7200,
+                new OpenWeatherCurrent(21.5, 20.8, 65, List.of()),
+                List.of(),
+                Arrays.asList(
+                        new OpenWeatherAlert("KMI", "Wind", 1719504000L, null, "No end time"),
+                        null,
+                        new OpenWeatherAlert("KMI", "Heat", 1719504000L, 1719590400L, "Valid alert")
+                ));
+
+        WeatherResponse weatherResponse = mapper.toWeatherResponse(response, 50, 4);
+
+        assertThat(weatherResponse.alerts()).extracting(alert -> alert.event()).containsExactly("Heat");
+    }
+
+    @Test
+    void ignoresMissingWeatherConditionEntries() {
+        OpenWeatherResponse response = new OpenWeatherResponse(50, 4, "Europe/Brussels", 7200,
+                new OpenWeatherCurrent(21.5, 20.8, 65,
+                        Arrays.asList(null, new OpenWeatherCondition("clear sky", "01d"))),
+                List.of(),
+                List.of());
+
+        WeatherResponse weatherResponse = mapper.toWeatherResponse(response, 50, 4);
+
+        assertThat(weatherResponse.current().description()).isEqualTo("clear sky");
+        assertThat(weatherResponse.current().icon()).isEqualTo("01d");
     }
 }

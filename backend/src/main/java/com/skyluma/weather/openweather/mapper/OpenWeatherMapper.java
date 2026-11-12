@@ -11,14 +11,17 @@ import com.skyluma.weather.openweather.dto.OpenWeatherCondition;
 import com.skyluma.weather.openweather.dto.OpenWeatherCurrent;
 import com.skyluma.weather.openweather.dto.OpenWeatherDaily;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 
+@Slf4j
 @Component
 public class OpenWeatherMapper {
 
@@ -27,11 +30,14 @@ public class OpenWeatherMapper {
             double latitude,
             double longitude
     ) {
-        if (openWeatherResponse.current() == null) {
+        if (openWeatherResponse == null || openWeatherResponse.current() == null) {
             throw new OpenWeatherClientException("OpenWeather response is missing current weather data");
         }
 
         OpenWeatherCurrent current = openWeatherResponse.current();
+        if (current.temp() == null || current.feelsLike() == null || current.humidity() == null) {
+            throw new OpenWeatherClientException("OpenWeather response has incomplete current weather data");
+        }
         OpenWeatherCondition currentCondition = getFirstCondition(current.weather());
 
         return new WeatherResponse(
@@ -56,9 +62,15 @@ public class OpenWeatherMapper {
         }
 
         ZoneId timezone = locationTimezone(response);
-        return dailyForecasts.stream()
+        List<DailyForecastResponse> forecast = dailyForecasts.stream()
                 .map(day -> mapDailyForecast(day, timezone))
+                .filter(Objects::nonNull)
                 .toList();
+
+        if (forecast.size() < dailyForecasts.size()) {
+            log.warn("Skipped {} incomplete OpenWeather daily forecast entries", dailyForecasts.size() - forecast.size());
+        }
+        return forecast;
     }
 
     private ZoneId locationTimezone(OpenWeatherResponse response) {
@@ -75,7 +87,13 @@ public class OpenWeatherMapper {
         throw new OpenWeatherClientException("OpenWeather response is missing timezone data");
     }
 
+    // Returns null for a day without a timestamp or temperatures, so the other days are kept.
+    // Humidity is optional and stays null when the provider omits it.
     private DailyForecastResponse mapDailyForecast(OpenWeatherDaily dailyForecast, ZoneId timezone) {
+        if (dailyForecast == null || dailyForecast.dt() == null || dailyForecast.temp() == null
+                || dailyForecast.temp().min() == null || dailyForecast.temp().max() == null) {
+            return null;
+        }
         OpenWeatherCondition condition = getFirstCondition(dailyForecast.weather());
         Instant timestamp = Instant.ofEpochSecond(dailyForecast.dt());
 
@@ -95,12 +113,22 @@ public class OpenWeatherMapper {
             return List.of();
         }
 
-        return alerts.stream()
+        List<WeatherAlertResponse> mappedAlerts = alerts.stream()
                 .map(this::mapAlert)
+                .filter(Objects::nonNull)
                 .toList();
+
+        if (mappedAlerts.size() < alerts.size()) {
+            log.warn("Skipped {} incomplete OpenWeather alerts", alerts.size() - mappedAlerts.size());
+        }
+        return mappedAlerts;
     }
 
+    // Returns null for an alert without start or end, so the remaining alerts and forecast are kept.
     private WeatherAlertResponse mapAlert(OpenWeatherAlert alert) {
+        if (alert == null || alert.start() == null || alert.end() == null) {
+            return null;
+        }
         return new WeatherAlertResponse(
                 alert.senderName(),
                 alert.event(),
@@ -111,10 +139,13 @@ public class OpenWeatherMapper {
     }
 
     private OpenWeatherCondition getFirstCondition(List<OpenWeatherCondition> conditions) {
-        if (conditions == null || conditions.isEmpty()) {
+        if (conditions == null) {
             return null;
         }
 
-        return conditions.getFirst();
+        return conditions.stream()
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 }
