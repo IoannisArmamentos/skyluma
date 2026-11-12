@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import userEvent from '@testing-library/user-event';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
 
@@ -228,20 +229,20 @@ describe('WeatherPage', () => {
       expect(component.weather()).toEqual(weatherResponse);
     });
 
-    it('submits the coordinate form with the Enter key', () => {
+    it('submits the coordinate form once when Enter is pressed in a field', async () => {
       weatherApi.calls = [];
-
-      setInputValue('latitude', '40.7128');
-      setInputValue('longitude', '-74.006');
-
-      // Pressing Enter in a field submits the form through its submit button.
+      const user = userEvent.setup();
       const form = getPage().querySelector('form') as HTMLFormElement;
-      const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-      expect(submitButton.textContent?.trim()).toBe('Get weather');
+      const submits = vi.fn();
+      form.addEventListener('submit', submits);
 
-      form.requestSubmit();
+      await user.clear(getInput('latitude'));
+      await user.type(getInput('latitude'), '40.7128');
+      await user.clear(getInput('longitude'));
+      await user.type(getInput('longitude'), '-74.006{Enter}');
       fixture.detectChanges();
 
+      expect(submits).toHaveBeenCalledOnce();
       expect(weatherApi.calls).toEqual([
         { latitude: 40.7128, longitude: -74.006, provider: undefined },
       ]);
@@ -396,6 +397,73 @@ describe('WeatherPage', () => {
 
       expect(component.errorMessage()).toBe('');
       expect(component.weather()).toEqual(weatherResponse);
+    });
+
+    it('drops a loading request when the next map selection is invalid', () => {
+      const responses: Subject<WeatherResponse>[] = [];
+      weatherApi.respond = () => {
+        const response = new Subject<WeatherResponse>();
+        responses.push(response);
+        return response;
+      };
+      weatherApi.calls = [];
+
+      selectMapLocation(51.1, 4.1);
+      expect(component.loading()).toBe(true);
+
+      // A click on a repeated world copy gives a longitude outside -180..180.
+      selectMapLocation(51.1, 360);
+      fixture.detectChanges();
+
+      expect(weatherApi.calls).toEqual([{ latitude: 51.1, longitude: 4.1, provider: undefined }]);
+      expect(responses[0].observed).toBe(false);
+      expect(component.loading()).toBe(false);
+      expect(component.weather()).toBeNull();
+
+      // The answer for the earlier selection arrives after the invalid one.
+      responses[0].next({ ...weatherResponse, location: { latitude: 51.1, longitude: 4.1 } });
+      responses[0].complete();
+      fixture.detectChanges();
+
+      const page = getPage();
+      expect(component.weather()).toBeNull();
+      expect(component.loading()).toBe(false);
+      expect(page.textContent).not.toContain('Current weather');
+      expect(page.querySelector('[role="alert"]')?.textContent).toBe(
+        'Latitude must be between -90 and 90, and longitude must be between -180 and 180.',
+      );
+      expect(getStatus()).toBe('');
+    });
+
+    it('loads a valid location after an invalid selection dropped a request', () => {
+      const responses: Subject<WeatherResponse>[] = [];
+      weatherApi.respond = () => {
+        const response = new Subject<WeatherResponse>();
+        responses.push(response);
+        return response;
+      };
+
+      selectMapLocation(51.1, 4.1);
+      selectMapLocation(51.1, 360);
+      selectMapLocation(52.2, 5.2);
+
+      responses[1].next({ ...weatherResponse, location: { latitude: 52.2, longitude: 5.2 } });
+      fixture.detectChanges();
+
+      expect(component.errorMessage()).toBe('');
+      expect(component.loading()).toBe(false);
+      expect(component.weather()?.location).toEqual({ latitude: 52.2, longitude: 5.2 });
+      expect(getMarker().getLatLng()).toEqual(new LatLng(52.2, 5.2));
+    });
+
+    it('keeps loaded weather when an invalid selection follows it', () => {
+      selectMapLocation(51.1, 360);
+      fixture.detectChanges();
+
+      // Nothing was loading, so the weather on screen still matches the marker.
+      expect(component.weather()).toEqual(weatherResponse);
+      expect(getMarker().getLatLng()).toEqual(new LatLng(48.8566, 2.3522));
+      expect(component.errorMessage()).toContain('longitude must be between -180 and 180');
     });
 
     it('does not send the same request twice while it is loading', () => {
@@ -563,6 +631,60 @@ describe('WeatherPage', () => {
       );
     });
 
+    describe('with the Permissions API', () => {
+      let permission: { state: PermissionState };
+
+      beforeEach(async () => {
+        permission = { state: 'prompt' };
+        Object.defineProperty(navigator, 'permissions', {
+          configurable: true,
+          value: { query: () => Promise.resolve(permission) },
+        });
+
+        installGeolocation('deny');
+        createPage();
+        permission.state = 'denied';
+        await fixture.whenStable();
+        weatherApi.calls = [];
+      });
+
+      afterEach(() => {
+        Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined });
+      });
+
+      it('does not ask again while access stays denied', () => {
+        getButtonByText('Use current location').click();
+        getButtonByText('Use current location').click();
+        fixture.detectChanges();
+
+        expect(geolocation.requests).toBe(1);
+        expect(weatherApi.calls).toEqual([]);
+        expect(getStatus()).toContain('Allow it in your browser settings');
+      });
+
+      it('uses the location after access is allowed in the browser settings', () => {
+        permission.state = 'granted';
+        geolocation.mode = 'allow';
+
+        getButtonByText('Use current location').click();
+        fixture.detectChanges();
+
+        expect(geolocation.requests).toBe(2);
+        expect(weatherApi.calls).toEqual([BROWSER_CALL]);
+        expect(component.latitude()).toBe(BROWSER_POSITION.latitude);
+        expect(getStatus()).toBe('');
+      });
+
+      it('asks again when the prompt was dismissed without a decision', () => {
+        // A dismissed prompt reports a denial to the page, but the permission stays "prompt".
+        permission.state = 'prompt';
+
+        getButtonByText('Use current location').click();
+
+        expect(geolocation.requests).toBe(2);
+      });
+    });
+
     it('asks for the location only once while a request is open', () => {
       installGeolocation('pending');
       createPage();
@@ -640,13 +762,18 @@ describe('WeatherPage', () => {
     getMap().fire('click', { latlng: new LatLng(latitude, longitude) });
   }
 
-  function setInputValue(name: string, value: string): void {
+  function getInput(name: string): HTMLInputElement {
     const input = getPage().querySelector<HTMLInputElement>(`input[name="${name}"]`);
 
     if (!input) {
       throw new Error(`Input not found: ${name}`);
     }
 
+    return input;
+  }
+
+  function setInputValue(name: string, value: string): void {
+    const input = getInput(name);
     input.value = value;
     input.dispatchEvent(new Event('input'));
   }

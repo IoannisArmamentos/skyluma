@@ -15,7 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { LeafletMap, Marker, TileLayer, type LatLngExpression } from 'leaflet';
-import { Observable, Subject, catchError, map, of, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subject, catchError, map, of, switchMap } from 'rxjs';
 
 import { WeatherApi } from '../weather-api';
 import { WeatherProvider, WeatherResponse } from '../weather.models';
@@ -93,25 +93,28 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
   private map?: LeafletMap;
   private marker?: Marker;
 
-  private readonly weatherRequests = new Subject<WeatherRequest>();
+  /** A request to load, or null to cancel the request that is still loading. */
+  private readonly weatherRequests = new Subject<WeatherRequest | null>();
   private pendingRequestKey = '';
 
   private locationAttempt = 0;
   private locationTimer?: ReturnType<typeof setTimeout>;
+  private locationPermission?: PermissionStatus;
   private locationPermissionDenied = false;
 
   constructor() {
-    // switchMap drops the previous request when a new one starts, which cancels the HTTP call
+    // switchMap drops the previous request when a new value arrives, which cancels the HTTP call
     // and stops a slow, older response from replacing newer weather.
     this.weatherRequests
       .pipe(
-        switchMap((request) => this.fetchWeather(request)),
+        switchMap((request) => (request ? this.fetchWeather(request) : EMPTY)),
         takeUntilDestroyed(),
       )
       .subscribe((result) => this.applyWeatherResult(result));
   }
 
   ngOnInit(): void {
+    this.watchLocationPermission();
     this.useCurrentLocation();
   }
 
@@ -141,9 +144,9 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // A denied prompt is not shown again in this session. The browser settings are the
-    // place to change that decision, and asking again only adds dismissed prompts.
-    if (this.locationPermissionDenied) {
+    // A denial that has not changed is not asked again. The browser settings are the place to
+    // change that decision, and asking again only adds dismissed prompts.
+    if (this.isLocationAccessBlocked()) {
       this.locationMessage.set(
         'Location access was not allowed. Allow it in your browser settings to use your current location.',
       );
@@ -255,6 +258,7 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
     const coordinates = this.getValidCoordinates();
 
     if (!coordinates) {
+      this.cancelPendingWeather();
       this.errorMessage.set(
         'Latitude must be between -90 and 90, and longitude must be between -180 and 180.',
       );
@@ -300,6 +304,40 @@ export class WeatherPage implements OnInit, AfterViewInit, OnDestroy {
     // Weather for the previous location must not look like the answer to this request.
     this.weather.set(null);
     this.errorMessage.set(this.getErrorMessage(result.error));
+  }
+
+  /**
+   * Stops the request that is still loading, so its response can never be shown.
+   * The weather on screen was already replaced by that newer selection, so it goes too.
+   * Weather with no newer request still matches the marker and stays visible.
+   */
+  private cancelPendingWeather(): void {
+    if (!this.loading()) {
+      return;
+    }
+
+    this.weatherRequests.next(null);
+    this.pendingRequestKey = '';
+    this.loading.set(false);
+    this.weather.set(null);
+  }
+
+  private watchLocationPermission(): void {
+    navigator.permissions
+      ?.query({ name: 'geolocation' })
+      .then((status) => {
+        this.locationPermission = status;
+      })
+      .catch(() => undefined);
+  }
+
+  private isLocationAccessBlocked(): boolean {
+    // PermissionStatus.state follows what the user changes in the browser settings, so access
+    // that is allowed again works without a reload. Without the Permissions API, a denial seen
+    // in this session is the only signal.
+    const state = this.locationPermission?.state;
+
+    return state === undefined ? this.locationPermissionDenied : state === 'denied';
   }
 
   private handleLocationFailure(reason: string): void {
