@@ -3,9 +3,9 @@ package com.skyluma.weather.openweather.dto;
 import java.util.List;
 
 public record OpenWeatherDaily(
-        long dt,
+        Long dt,
         OpenWeatherTemperature temp,
-        int humidity,
+        Integer humidity,
         List<OpenWeatherCondition> weather
 ) {
 }

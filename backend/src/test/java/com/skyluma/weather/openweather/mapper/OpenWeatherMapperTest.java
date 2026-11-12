@@ -91,9 +91,9 @@ class OpenWeatherMapperTest {
                     ? Instant.parse("2026-01-01T00:30:00Z")
                     : Instant.parse("2025-12-31T23:30:00Z");
             OpenWeatherResponse providerResponse = new OpenWeatherResponse(50, 4, timezone,
-                    null, new OpenWeatherCurrent(10, 9, 80, List.of()),
+                    null, new OpenWeatherCurrent(10.0, 9.0, 80, List.of()),
                     List.of(new OpenWeatherDaily(sample.getEpochSecond(),
-                            new OpenWeatherTemperature(1, 5), 70, List.of())), List.of());
+                            new OpenWeatherTemperature(1.0, 5.0), 70, List.of())), List.of());
 
             WeatherResponse response = mapper.toWeatherResponse(providerResponse, 50, 4);
 
@@ -111,9 +111,9 @@ class OpenWeatherMapperTest {
                     ? Instant.parse("2025-12-31T23:30:00Z")
                     : Instant.parse("2026-01-01T00:30:00Z");
             OpenWeatherResponse providerResponse = new OpenWeatherResponse(50, 4, null, offsetSeconds,
-                    new OpenWeatherCurrent(10, 9, 80, List.of()),
+                    new OpenWeatherCurrent(10.0, 9.0, 80, List.of()),
                     List.of(new OpenWeatherDaily(sample.getEpochSecond(),
-                            new OpenWeatherTemperature(1, 5), 70, List.of())), List.of());
+                            new OpenWeatherTemperature(1.0, 5.0), 70, List.of())), List.of());
 
             WeatherResponse response = mapper.toWeatherResponse(providerResponse, 50, 4);
 
@@ -126,9 +126,9 @@ class OpenWeatherMapperTest {
     @Test
     void rejectsDailyForecastWithoutLocationTimezone() {
         OpenWeatherResponse providerResponse = new OpenWeatherResponse(50, 4, null, null,
-                new OpenWeatherCurrent(10, 9, 80, List.of()),
+                new OpenWeatherCurrent(10.0, 9.0, 80, List.of()),
                 List.of(new OpenWeatherDaily(Instant.parse("2026-01-01T00:30:00Z").getEpochSecond(),
-                        new OpenWeatherTemperature(1, 5), 70, List.of())), List.of());
+                        new OpenWeatherTemperature(1.0, 5.0), 70, List.of())), List.of());
 
         assertThatThrownBy(() -> mapper.toWeatherResponse(providerResponse, 50, 4))
                 .isInstanceOf(OpenWeatherClientException.class)
@@ -186,5 +186,26 @@ class OpenWeatherMapperTest {
         assertThatThrownBy(() -> mapper.toWeatherResponse(openWeatherResponse, 50.8798, 4.7005))
                 .isInstanceOf(OpenWeatherClientException.class)
                 .hasMessage("OpenWeather response is missing current weather data");
+    }
+
+    @Test
+    void rejectsMissingCurrentTemperature() {
+        OpenWeatherResponse response = new OpenWeatherResponse(50, 4, "Europe/Brussels", 7200,
+                new OpenWeatherCurrent(null, 20.8, 65, List.of()), List.of(), List.of());
+
+        assertThatThrownBy(() -> mapper.toWeatherResponse(response, 50, 4))
+                .isInstanceOf(OpenWeatherClientException.class)
+                .hasMessage("OpenWeather response has incomplete current weather data");
+    }
+
+    @Test
+    void rejectsMissingDailyTemperature() {
+        OpenWeatherResponse response = new OpenWeatherResponse(50, 4, "Europe/Brussels", 7200,
+                new OpenWeatherCurrent(21.5, 20.8, 65, List.of()),
+                List.of(new OpenWeatherDaily(1719504000L, null, 70, List.of())), List.of());
+
+        assertThatThrownBy(() -> mapper.toWeatherResponse(response, 50, 4))
+                .isInstanceOf(OpenWeatherClientException.class)
+                .hasMessage("OpenWeather response has incomplete daily forecast data");
     }
 }

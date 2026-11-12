@@ -5,12 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record OpenWeatherCurrent(
-        double temp,
+        Double temp,
 
         @JsonProperty("feels_like")
-        double feelsLike,
+        Double feelsLike,
 
-        int humidity,
+        Integer humidity,
         List<OpenWeatherCondition> weather
 ) {
 }

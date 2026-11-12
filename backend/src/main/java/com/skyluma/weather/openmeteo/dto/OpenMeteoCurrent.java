@@ -6,15 +6,15 @@ public record OpenMeteoCurrent(
         String time,
 
         @JsonProperty("temperature_2m")
-        double temperature,
+        Double temperature,
 
         @JsonProperty("apparent_temperature")
-        double apparentTemperature,
+        Double apparentTemperature,
 
         @JsonProperty("relative_humidity_2m")
-        int relativeHumidity,
+        Integer relativeHumidity,
 
         @JsonProperty("weather_code")
-        int weatherCode
+        Integer weatherCode
 ) {
 }

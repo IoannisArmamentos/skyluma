@@ -34,7 +34,7 @@ public class OpenMeteoClient {
 
             return response;
         } catch (RestClientException exception) {
-            log.warn("Failed to fetch weather data from Open-Meteo", exception);
+            log.warn("Failed to fetch weather data from Open-Meteo: {}", exception.getClass().getSimpleName());
             throw new OpenMeteoClientException("Could not fetch weather data from Open-Meteo");
         }
     }

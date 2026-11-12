@@ -88,7 +88,7 @@ class OpenMeteoMapperTest {
     @Test
     void keepsCalendarDatesAcrossYearBoundary() {
         OpenMeteoResponse providerResponse = new OpenMeteoResponse(50, 4,
-                new OpenMeteoCurrent("2025-12-31T12:00", 10, 9, 80, 0),
+                new OpenMeteoCurrent("2025-12-31T12:00", 10.0, 9.0, 80, 0),
                 new OpenMeteoDaily(List.of("2025-12-31", "2026-01-01"),
                         List.of(1.0, 2.0), List.of(5.0, 6.0), List.of(0, 1)));
 
@@ -130,5 +130,26 @@ class OpenMeteoMapperTest {
         assertThatThrownBy(() -> mapper.toWeatherResponse(openMeteoResponse, 50.8798, 4.7005))
                 .isInstanceOf(OpenMeteoClientException.class)
                 .hasMessage("Open-Meteo response is missing current weather data");
+    }
+
+    @Test
+    void rejectsMissingCurrentTemperature() {
+        OpenMeteoResponse response = new OpenMeteoResponse(50, 4,
+                new OpenMeteoCurrent("2026-06-28T14:00", null, 20.8, 65, 1), null);
+
+        assertThatThrownBy(() -> mapper.toWeatherResponse(response, 50, 4))
+                .isInstanceOf(OpenMeteoClientException.class)
+                .hasMessage("Open-Meteo response has incomplete current weather data");
+    }
+
+    @Test
+    void rejectsIncompleteDailyArrays() {
+        OpenMeteoResponse response = new OpenMeteoResponse(50, 4,
+                new OpenMeteoCurrent("2026-06-28T14:00", 21.5, 20.8, 65, 1),
+                new OpenMeteoDaily(List.of("2026-06-28"), List.of(), List.of(24.8), List.of(1)));
+
+        assertThatThrownBy(() -> mapper.toWeatherResponse(response, 50, 4))
+                .isInstanceOf(OpenMeteoClientException.class)
+                .hasMessage("Open-Meteo response has incomplete daily forecast data");
     }
 }

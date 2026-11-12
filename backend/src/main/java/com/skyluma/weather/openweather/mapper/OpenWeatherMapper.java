@@ -27,11 +27,14 @@ public class OpenWeatherMapper {
             double latitude,
             double longitude
     ) {
-        if (openWeatherResponse.current() == null) {
+        if (openWeatherResponse == null || openWeatherResponse.current() == null) {
             throw new OpenWeatherClientException("OpenWeather response is missing current weather data");
         }
 
         OpenWeatherCurrent current = openWeatherResponse.current();
+        if (current.temp() == null || current.feelsLike() == null || current.humidity() == null) {
+            throw new OpenWeatherClientException("OpenWeather response has incomplete current weather data");
+        }
         OpenWeatherCondition currentCondition = getFirstCondition(current.weather());
 
         return new WeatherResponse(
@@ -76,6 +79,11 @@ public class OpenWeatherMapper {
     }
 
     private DailyForecastResponse mapDailyForecast(OpenWeatherDaily dailyForecast, ZoneId timezone) {
+        if (dailyForecast == null || dailyForecast.dt() == null || dailyForecast.temp() == null
+                || dailyForecast.temp().min() == null || dailyForecast.temp().max() == null
+                || dailyForecast.humidity() == null) {
+            throw new OpenWeatherClientException("OpenWeather response has incomplete daily forecast data");
+        }
         OpenWeatherCondition condition = getFirstCondition(dailyForecast.weather());
         Instant timestamp = Instant.ofEpochSecond(dailyForecast.dt());
 
@@ -101,6 +109,9 @@ public class OpenWeatherMapper {
     }
 
     private WeatherAlertResponse mapAlert(OpenWeatherAlert alert) {
+        if (alert == null || alert.start() == null || alert.end() == null) {
+            throw new OpenWeatherClientException("OpenWeather response has incomplete alert data");
+        }
         return new WeatherAlertResponse(
                 alert.senderName(),
                 alert.event(),
@@ -115,6 +126,10 @@ public class OpenWeatherMapper {
             return null;
         }
 
-        return conditions.getFirst();
+        OpenWeatherCondition condition = conditions.getFirst();
+        if (condition == null) {
+            throw new OpenWeatherClientException("OpenWeather response has incomplete condition data");
+        }
+        return condition;
     }
 }

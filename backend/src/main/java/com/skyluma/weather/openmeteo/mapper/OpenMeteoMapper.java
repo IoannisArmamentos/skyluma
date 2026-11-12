@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -24,8 +25,13 @@ public class OpenMeteoMapper {
             double latitude,
             double longitude
     ) {
-        if (openMeteoResponse.current() == null) {
+        if (openMeteoResponse == null || openMeteoResponse.current() == null) {
             throw new OpenMeteoClientException("Open-Meteo response is missing current weather data");
+        }
+        OpenMeteoCurrent current = openMeteoResponse.current();
+        if (current.temperature() == null || current.apparentTemperature() == null
+                || current.relativeHumidity() == null || current.weatherCode() == null) {
+            throw new OpenMeteoClientException("Open-Meteo response has incomplete current weather data");
         }
 
         return new WeatherResponse(
@@ -48,24 +54,37 @@ public class OpenMeteoMapper {
     }
 
     private List<DailyForecastResponse> toDailyForecast(OpenMeteoDaily daily) {
-        if (daily == null || daily.time() == null) {
+        if (daily == null) {
             return List.of();
         }
-
-        return IntStream.range(0, daily.time().size())
-                .mapToObj(index -> {
-                    LocalDate date = LocalDate.parse(daily.time().get(index));
-                    return new DailyForecastResponse(
-                            date.atStartOfDay().toInstant(ZoneOffset.UTC),
-                            daily.temperatureMin().get(index),
-                            daily.temperatureMax().get(index),
-                            null,
-                            toDescription(daily.weatherCode().get(index)),
-                            String.valueOf(daily.weatherCode().get(index)),
-                            date
-                    );
-                })
-                .toList();
+        if (daily.time() == null || daily.temperatureMin() == null || daily.temperatureMax() == null
+                || daily.weatherCode() == null || daily.temperatureMin().size() != daily.time().size()
+                || daily.temperatureMax().size() != daily.time().size()
+                || daily.weatherCode().size() != daily.time().size()) {
+            throw new OpenMeteoClientException("Open-Meteo response has incomplete daily forecast data");
+        }
+        try {
+            return IntStream.range(0, daily.time().size())
+                    .mapToObj(index -> {
+                        if (daily.time().get(index) == null || daily.temperatureMin().get(index) == null
+                                || daily.temperatureMax().get(index) == null || daily.weatherCode().get(index) == null) {
+                            throw new OpenMeteoClientException("Open-Meteo response has incomplete daily forecast data");
+                        }
+                        LocalDate date = LocalDate.parse(daily.time().get(index));
+                        return new DailyForecastResponse(
+                                date.atStartOfDay().toInstant(ZoneOffset.UTC),
+                                daily.temperatureMin().get(index),
+                                daily.temperatureMax().get(index),
+                                null,
+                                toDescription(daily.weatherCode().get(index)),
+                                String.valueOf(daily.weatherCode().get(index)),
+                                date
+                        );
+                    })
+                    .toList();
+        } catch (DateTimeParseException exception) {
+            throw new OpenMeteoClientException("Open-Meteo response has an invalid daily forecast date");
+        }
     }
 
     private String toDescription(int weatherCode) {

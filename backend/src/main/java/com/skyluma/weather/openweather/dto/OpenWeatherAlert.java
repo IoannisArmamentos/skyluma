@@ -7,8 +7,8 @@ public record OpenWeatherAlert(
         String senderName,
 
         String event,
-        long start,
-        long end,
+        Long start,
+        Long end,
         String description
 ) {
 }
