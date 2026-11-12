@@ -8,8 +8,6 @@ import com.skyluma.weather.openweather.dto.OpenWeatherHourly;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import com.skyluma.weather.openweather.mapper.OpenWeatherMapper;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
@@ -24,14 +22,12 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 class HourlyForecastMappingTest {
 
     private final OpenMeteoMapper openMeteoMapper = new OpenMeteoMapper();
     private final OpenWeatherMapper openWeatherMapper = new OpenWeatherMapper();
 
-    @Autowired
-    private JsonMapper jsonMapper;
+    private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     @Test
     void mapsOpenMeteoHourlyDataAndSpringDstBoundary() throws IOException {
@@ -43,6 +39,8 @@ class HourlyForecastMappingTest {
         assertThat(response.units().temperature()).isEqualTo("°C");
         assertThat(response.units().windSpeed()).isEqualTo("m/s");
         assertThat(response.units().precipitationAmount()).isEqualTo("mm");
+        assertThat(response.units().pressure()).isEqualTo("hPa");
+        assertThat(response.current().pressure()).isEqualTo(1013.0);
         assertThat(response.capabilities().supportsHourlyForecast()).isTrue();
         assertThat(response.capabilities().supportsAlerts()).isFalse();
         assertThat(response.hourly()).hasSize(3);
@@ -55,7 +53,7 @@ class HourlyForecastMappingTest {
         assertThat(response.hourly().get(1).precipitationProbability()).isEqualTo(30);
         assertThat(response.hourly().get(1).precipitationAmount()).isEqualTo(0.4);
         assertThat(response.hourly().get(1).windGusts()).isEqualTo(7.1);
-        assertThat(response.hourly().get(1).pressure()).isEqualTo(1004.3);
+        assertThat(response.hourly().get(1).pressure()).isEqualTo(1013.0);
         assertThat(response.hourly().get(2).feelsLike()).isNull();
         assertThat(response.hourly().get(2).precipitationAmount()).isNull();
         assertThat(response.daily()).extracting(day -> day.date())
@@ -75,17 +73,19 @@ class HourlyForecastMappingTest {
         assertThat(response.utcOffsetSeconds()).isEqualTo(-28800);
         assertThat(response.units().pressure()).isEqualTo("hPa");
         assertThat(response.capabilities().supportsAlerts()).isTrue();
-        assertThat(response.hourly()).hasSize(3);
+        assertThat(response.hourly()).hasSize(5);
         assertThat(response.hourly().get(0).time()).isEqualTo(Instant.parse("2026-11-01T08:30:00Z"));
         assertThat(response.hourly().get(1).time()).isEqualTo(Instant.parse("2026-11-01T09:30:00Z"));
         assertThat(response.hourly()).extracting(hour -> hour.time().atZone(ZoneId.of(response.timezone())).getHour())
-                .containsExactly(1, 1, 2);
+                .containsExactly(1, 1, 2, 3, 4);
         assertThat(response.hourly().get(0).precipitationProbability()).isEqualTo(25);
         assertThat(response.hourly().get(1).precipitationProbability()).isEqualTo(65);
         assertThat(response.hourly().get(1).precipitationAmount()).isEqualTo(0.8);
         assertThat(response.hourly().get(1).windGusts()).isNull();
         assertThat(response.hourly().get(2).precipitationProbability()).isZero();
-        assertThat(response.hourly().get(2).precipitationAmount()).isNull();
+        assertThat(response.hourly().get(2).precipitationAmount()).isZero();
+        assertThat(response.hourly().get(3).precipitationAmount()).isNull();
+        assertThat(response.hourly().get(4).precipitationAmount()).isNull();
         assertThat(response.daily().getFirst().date()).isEqualTo(LocalDate.of(2026, 11, 1));
         assertThat(response.current().sunrise()).isEqualTo(Instant.ofEpochSecond(1793520000));
         assertThat(response.daily().getFirst().sunset()).isEqualTo(Instant.ofEpochSecond(1793563200));

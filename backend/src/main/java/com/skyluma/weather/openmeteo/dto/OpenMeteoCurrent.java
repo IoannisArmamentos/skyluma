@@ -19,7 +19,7 @@ public record OpenMeteoCurrent(
         @JsonProperty("wind_speed_10m") Double windSpeed,
         @JsonProperty("wind_gusts_10m") Double windGusts,
         @JsonProperty("wind_direction_10m") Integer windDirection,
-        @JsonProperty("surface_pressure") Double pressure
+        @JsonProperty("pressure_msl") Double pressure
 ) {
     public OpenMeteoCurrent(String time, Double temperature, Double apparentTemperature,
                             Integer relativeHumidity, Integer weatherCode) {

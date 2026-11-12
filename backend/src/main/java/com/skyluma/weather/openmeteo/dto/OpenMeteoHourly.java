@@ -13,7 +13,7 @@ public record OpenMeteoHourly(
         @JsonProperty("wind_gusts_10m") List<Double> windGusts,
         @JsonProperty("wind_direction_10m") List<Integer> windDirection,
         @JsonProperty("relative_humidity_2m") List<Integer> humidity,
-        @JsonProperty("surface_pressure") List<Double> pressure,
+        @JsonProperty("pressure_msl") List<Double> pressure,
         @JsonProperty("weather_code") List<Integer> weatherCode
 ) {
 }

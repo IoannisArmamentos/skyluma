@@ -1,5 +1,6 @@
 package com.skyluma.weather.forecast.dto;
 
+/** All pressure values in this response refer to mean sea-level pressure. */
 public record WeatherUnitsResponse(
         String temperature,
         String precipitationProbability,

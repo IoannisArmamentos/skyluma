@@ -41,8 +41,11 @@ class WeatherApiIntegrationTest {
     private static final String OPEN_METEO_RESPONSE = """
             {
               "latitude": 34.05, "longitude": -118.24, "timezone": "America/Los_Angeles",
+              "utc_offset_seconds": -28800,
               "current": {"time": "2025-12-31T16:00", "temperature_2m": 15.2, "apparent_temperature": 14.1,
-                          "relative_humidity_2m": 60, "weather_code": 1},
+                          "relative_humidity_2m": 60, "weather_code": 1, "pressure_msl": 1018.0},
+              "hourly": {"time": [1767223800, 1767227400], "temperature_2m": [15.2, 14.6],
+                         "pressure_msl": [1018.2, null], "precipitation_probability": [0, 20]},
               "daily": {"time": ["2025-12-31", "2026-01-01", "2026-01-02"],
                         "temperature_2m_min": [8.0, 9.0, null],
                         "temperature_2m_max": [18.0, 19.0, 20.0],
@@ -55,8 +58,10 @@ class WeatherApiIntegrationTest {
     private static final String OPEN_WEATHER_RESPONSE = """
             {
               "lat": 1.87, "lon": -157.43, "timezone": "Pacific/Kiritimati", "timezone_offset": 50400,
-              "current": {"temp": 27.5, "feels_like": 30.1, "humidity": 78,
+              "current": {"temp": 27.5, "feels_like": 30.1, "humidity": 78, "pressure": 1009,
                           "weather": [{"description": "few clouds", "icon": "02d"}]},
+              "hourly": [{"dt": 1767223800, "temp": 27.5, "feels_like": 30.1,
+                          "pop": 0, "pressure": 1008}],
               "daily": [{"dt": 1767223800, "temp": {"min": 25.0, "max": 29.0},
                          "weather": [{"description": "light rain", "icon": "10d"}]}],
               "alerts": [
@@ -102,6 +107,14 @@ class WeatherApiIntegrationTest {
                         .param("provider", "openmeteo"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.current.temperature").value(15.2))
+                .andExpect(jsonPath("$.current.pressure").value(1018.0))
+                .andExpect(jsonPath("$.timezone").value("America/Los_Angeles"))
+                .andExpect(jsonPath("$.utcOffsetSeconds").value(-28800))
+                .andExpect(jsonPath("$.units.pressure").value("hPa"))
+                .andExpect(jsonPath("$.hourly", hasSize(2)))
+                .andExpect(jsonPath("$.hourly[0].pressure").value(1018.2))
+                .andExpect(jsonPath("$.hourly[1].pressure").value(nullValue()))
+                .andExpect(jsonPath("$.capabilities.supportsAlerts").value(false))
                 .andExpect(jsonPath("$.daily", hasSize(2)))
                 .andExpect(jsonPath("$.daily[0].date").value("2025-12-31"))
                 .andExpect(jsonPath("$.daily[0].dateTime").value("2025-12-31T00:00:00Z"))
@@ -115,6 +128,11 @@ class WeatherApiIntegrationTest {
                         .param("longitude", "-157.43")
                         .param("provider", "openweather"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.current.pressure").value(1009))
+                .andExpect(jsonPath("$.units.pressure").value("hPa"))
+                .andExpect(jsonPath("$.hourly[0].pressure").value(1008))
+                .andExpect(jsonPath("$.hourly[0].precipitationAmount").value(0.0))
+                .andExpect(jsonPath("$.capabilities.supportsAlerts").value(true))
                 .andExpect(jsonPath("$.daily", hasSize(1)))
                 .andExpect(jsonPath("$.daily[0].date").value("2026-01-01"))
                 .andExpect(jsonPath("$.daily[0].dateTime").value("2025-12-31T23:30:00Z"))

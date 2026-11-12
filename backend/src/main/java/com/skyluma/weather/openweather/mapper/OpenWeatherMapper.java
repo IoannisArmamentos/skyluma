@@ -148,7 +148,7 @@ public class OpenWeatherMapper {
         }
         OpenWeatherCondition condition = getFirstCondition(hour.weather());
         return new HourlyForecastResponse(timestamp, hour.temp(), hour.feelsLike(),
-                probabilityPercent(hour.pop()), precipitationAmount(hour.rain(), hour.snow()),
+                probabilityPercent(hour.pop()), precipitationAmount(hour.rain(), hour.snow(), hour.pop()),
                 hour.windSpeed(), hour.windGusts(), hour.windDirection(), hour.humidity(), hour.pressure(),
                 condition == null ? null : condition.description(), condition == null ? null : condition.icon());
     }
@@ -158,11 +158,17 @@ public class OpenWeatherMapper {
                 ? null : (int) Math.round(probability * 100);
     }
 
-    private Double precipitationAmount(Map<String, Double> rain, Map<String, Double> snow) {
+    private Double precipitationAmount(Map<String, Double> rain, Map<String, Double> snow, Double probability) {
         Double rainAmount = rain == null ? null : rain.get("1h");
         Double snowAmount = snow == null ? null : snow.get("1h");
         if (rainAmount == null) {
-            return snowAmount;
+            if (snowAmount != null) {
+                return snowAmount;
+            }
+            // Missing amounts alone mean unknown. An explicit zero probability with neither
+            // precipitation object is the provider's dry-hour case.
+            return rain == null && snow == null && probability != null && probability == 0.0
+                    ? 0.0 : null;
         }
         return snowAmount == null ? rainAmount : rainAmount + snowAmount;
     }

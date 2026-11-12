@@ -55,13 +55,16 @@ class WeatherClientReliabilityTest {
     }
 
     @Test
-    void mapsOpenMeteoHttpErrorToProviderException() {
+    void requestsMeanSeaLevelPressureAndMapsOpenMeteoHttpError() {
         RestClient.Builder builder = RestClient.builder().baseUrl("https://example.test");
         MockRestServiceServer mockServer = MockRestServiceServer.bindTo(builder).build();
         mockServer.expect(once(), requestTo(startsWith("https://example.test/v1/forecast")))
-                .andExpect(request -> assertThat(request.getURI().getRawQuery())
-                        .contains("forecast_hours=48", "timeformat=unixtime", "wind_speed_unit=ms",
-                                "temperature_unit=celsius", "precipitation_unit=mm"))
+                .andExpect(request -> assertThat(request.getURI().getQuery())
+                        .contains("current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl",
+                                "hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,pressure_msl,weather_code",
+                                "forecast_hours=48", "timeformat=unixtime", "wind_speed_unit=ms",
+                                "temperature_unit=celsius", "precipitation_unit=mm")
+                        .doesNotContain("surface_pressure"))
                 .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
         assertThatThrownBy(() -> new OpenMeteoClient(builder.build()).getWeather(50, 4))

@@ -2,6 +2,10 @@ package com.skyluma.weather.forecast.dto;
 
 import java.util.List;
 
+/**
+ * @param timezone IANA location timezone for converting forecast instants to local time
+ * @param utcOffsetSeconds provider's current/reference UTC offset, which can differ at future DST boundaries
+ */
 public record WeatherResponse(
         String provider,
         LocationResponse location,
