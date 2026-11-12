@@ -1,0 +1,8 @@
+{
+  "skillOverrides": {
+    "gh-fix-ci": "user-invocable-only",
+    "rest-api-conventions": "user-invocable-only",
+    "problem-details-rfc9457": "user-invocable-only",
+    "layered-architecture": "user-invocable-only"
+  }
+}

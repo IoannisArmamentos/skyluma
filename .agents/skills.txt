@@ -1,0 +1,10 @@
+# Agent Skills SkyLuma selects from the shared library (~/.local/share/agent-skills, or $AGENT_SKILLS_HOME).
+# One name per line. After editing, run .agents/link-skills.sh; Claude Code and Codex then load these.
+# Provenance, pins and reviews: the library's MANIFEST.md. Routing: AGENTS.md, "Agent skills".
+
+# Frontend (Angular 22): official Google skill
+angular-developer
+
+# CI (.github/workflows)
+github-actions-hardening
+gh-fix-ci
