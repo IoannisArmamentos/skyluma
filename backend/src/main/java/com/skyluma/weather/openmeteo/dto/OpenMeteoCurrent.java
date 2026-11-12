@@ -15,6 +15,15 @@ public record OpenMeteoCurrent(
         Integer relativeHumidity,
 
         @JsonProperty("weather_code")
-        Integer weatherCode
+        Integer weatherCode,
+        @JsonProperty("wind_speed_10m") Double windSpeed,
+        @JsonProperty("wind_gusts_10m") Double windGusts,
+        @JsonProperty("wind_direction_10m") Integer windDirection,
+        @JsonProperty("surface_pressure") Double pressure
 ) {
+    public OpenMeteoCurrent(String time, Double temperature, Double apparentTemperature,
+                            Integer relativeHumidity, Integer weatherCode) {
+        this(time, temperature, apparentTemperature, relativeHumidity, weatherCode,
+                null, null, null, null);
+    }
 }

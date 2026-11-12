@@ -59,6 +59,9 @@ class WeatherClientReliabilityTest {
         RestClient.Builder builder = RestClient.builder().baseUrl("https://example.test");
         MockRestServiceServer mockServer = MockRestServiceServer.bindTo(builder).build();
         mockServer.expect(once(), requestTo(startsWith("https://example.test/v1/forecast")))
+                .andExpect(request -> assertThat(request.getURI().getRawQuery())
+                        .contains("forecast_hours=48", "timeformat=unixtime", "wind_speed_unit=ms",
+                                "temperature_unit=celsius", "precipitation_unit=mm"))
                 .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
         assertThatThrownBy(() -> new OpenMeteoClient(builder.build()).getWeather(50, 4))
@@ -72,6 +75,7 @@ class WeatherClientReliabilityTest {
         RestClient.Builder builder = RestClient.builder().baseUrl("https://example.test");
         MockRestServiceServer mockServer = MockRestServiceServer.bindTo(builder).build();
         mockServer.expect(once(), requestTo(startsWith("https://example.test/onecall")))
+                .andExpect(request -> assertThat(request.getURI().getRawQuery()).contains("units=metric"))
                 .andRespond(withStatus(HttpStatus.BAD_GATEWAY));
 
         assertThatThrownBy(() -> new OpenWeatherClient(builder.build(), openWeatherProperties("https://example.test")).getWeather(50, 4))

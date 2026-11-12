@@ -10,6 +10,12 @@ public record OpenWeatherResponse(
         @JsonProperty("timezone_offset") Integer timezoneOffset,
         OpenWeatherCurrent current,
         List<OpenWeatherDaily> daily,
-        List<OpenWeatherAlert> alerts
+        List<OpenWeatherAlert> alerts,
+        List<OpenWeatherHourly> hourly
 ) {
+    public OpenWeatherResponse(double lat, double lon, String timezone, Integer timezoneOffset,
+                               OpenWeatherCurrent current, List<OpenWeatherDaily> daily,
+                               List<OpenWeatherAlert> alerts) {
+        this(lat, lon, timezone, timezoneOffset, current, daily, alerts, null);
+    }
 }

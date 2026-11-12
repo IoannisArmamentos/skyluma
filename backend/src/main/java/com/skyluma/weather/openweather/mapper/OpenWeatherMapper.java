@@ -1,15 +1,19 @@
 package com.skyluma.weather.openweather.mapper;
 
 import com.skyluma.weather.forecast.dto.CurrentWeatherResponse;
+import com.skyluma.weather.forecast.dto.WeatherCapabilitiesResponse;
 import com.skyluma.weather.forecast.dto.DailyForecastResponse;
+import com.skyluma.weather.forecast.dto.HourlyForecastResponse;
 import com.skyluma.weather.forecast.dto.LocationResponse;
 import com.skyluma.weather.forecast.dto.WeatherAlertResponse;
 import com.skyluma.weather.forecast.dto.WeatherResponse;
+import com.skyluma.weather.forecast.dto.WeatherUnitsResponse;
 import com.skyluma.weather.openweather.client.OpenWeatherClientException;
 import com.skyluma.weather.openweather.dto.OpenWeatherAlert;
 import com.skyluma.weather.openweather.dto.OpenWeatherCondition;
 import com.skyluma.weather.openweather.dto.OpenWeatherCurrent;
 import com.skyluma.weather.openweather.dto.OpenWeatherDaily;
+import com.skyluma.weather.openweather.dto.OpenWeatherHourly;
 import com.skyluma.weather.openweather.dto.OpenWeatherResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,6 +23,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
 
 @Slf4j
@@ -48,10 +54,17 @@ public class OpenWeatherMapper {
                         current.feelsLike(),
                         current.humidity(),
                         currentCondition == null ? null : currentCondition.description(),
-                        currentCondition == null ? null : currentCondition.icon()
+                        currentCondition == null ? null : currentCondition.icon(),
+                        current.windSpeed(), current.windGusts(), current.windDirection(), current.pressure(),
+                        toInstant(current.sunrise()), toInstant(current.sunset())
                 ),
                 mapDailyForecasts(openWeatherResponse),
-                mapAlerts(openWeatherResponse.alerts())
+                mapAlerts(openWeatherResponse.alerts()),
+                openWeatherResponse.timezone(),
+                openWeatherResponse.timezoneOffset(),
+                WeatherUnitsResponse.METRIC,
+                mapHourlyForecasts(openWeatherResponse.hourly()),
+                WeatherCapabilitiesResponse.OPEN_WEATHER
         );
     }
 
@@ -95,7 +108,10 @@ public class OpenWeatherMapper {
             return null;
         }
         OpenWeatherCondition condition = getFirstCondition(dailyForecast.weather());
-        Instant timestamp = Instant.ofEpochSecond(dailyForecast.dt());
+        Instant timestamp = toInstant(dailyForecast.dt());
+        if (timestamp == null) {
+            return null;
+        }
 
         return new DailyForecastResponse(
                 timestamp,
@@ -104,8 +120,62 @@ public class OpenWeatherMapper {
                 dailyForecast.humidity(),
                 condition == null ? null : condition.description(),
                 condition == null ? null : condition.icon(),
-                timestamp.atZone(timezone).toLocalDate()
+                timestamp.atZone(timezone).toLocalDate(),
+                toInstant(dailyForecast.sunrise()),
+                toInstant(dailyForecast.sunset())
         );
+    }
+
+    private List<HourlyForecastResponse> mapHourlyForecasts(List<OpenWeatherHourly> hourly) {
+        if (hourly == null) {
+            return List.of();
+        }
+        return hourly.stream()
+                .map(this::mapHourlyForecast)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(HourlyForecastResponse::time))
+                .limit(48)
+                .toList();
+    }
+
+    private HourlyForecastResponse mapHourlyForecast(OpenWeatherHourly hour) {
+        if (hour == null || hour.dt() == null) {
+            return null;
+        }
+        Instant timestamp = toInstant(hour.dt());
+        if (timestamp == null) {
+            return null;
+        }
+        OpenWeatherCondition condition = getFirstCondition(hour.weather());
+        return new HourlyForecastResponse(timestamp, hour.temp(), hour.feelsLike(),
+                probabilityPercent(hour.pop()), precipitationAmount(hour.rain(), hour.snow()),
+                hour.windSpeed(), hour.windGusts(), hour.windDirection(), hour.humidity(), hour.pressure(),
+                condition == null ? null : condition.description(), condition == null ? null : condition.icon());
+    }
+
+    private Integer probabilityPercent(Double probability) {
+        return probability == null || !Double.isFinite(probability) || probability < 0 || probability > 1
+                ? null : (int) Math.round(probability * 100);
+    }
+
+    private Double precipitationAmount(Map<String, Double> rain, Map<String, Double> snow) {
+        Double rainAmount = rain == null ? null : rain.get("1h");
+        Double snowAmount = snow == null ? null : snow.get("1h");
+        if (rainAmount == null) {
+            return snowAmount;
+        }
+        return snowAmount == null ? rainAmount : rainAmount + snowAmount;
+    }
+
+    private Instant toInstant(Long seconds) {
+        if (seconds == null) {
+            return null;
+        }
+        try {
+            return Instant.ofEpochSecond(seconds);
+        } catch (DateTimeException exception) {
+            return null;
+        }
     }
 
     private List<WeatherAlertResponse> mapAlerts(List<OpenWeatherAlert> alerts) {
