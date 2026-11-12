@@ -4,7 +4,7 @@
     <p>Check the current weather, daily forecast, and weather alerts for a location.</p>
   </section>
 
-  <form class="search-form">
+  <form class="search-form" (ngSubmit)="loadWeather()">
     <label>
       Latitude
       <input
@@ -42,88 +42,104 @@
       </select>
     </label>
 
-    <button type="button" [disabled]="loading || locating" (click)="loadWeather()">
-      {{ loading ? 'Loading...' : 'Get weather' }}
+    <!-- The buttons stay enabled so keyboard focus is not lost while a request runs.
+         Superseded and repeated requests are handled in the component. -->
+    <button type="submit">
+      {{ loading() ? 'Loading...' : 'Get weather' }}
     </button>
 
-    <button type="button" [disabled]="loading || locating" (click)="useCurrentLocation()">
-      {{ locating ? 'Locating...' : 'Use current location' }}
+    <button type="button" (click)="useCurrentLocation()">
+      {{ locating() ? 'Locating...' : 'Use current location' }}
     </button>
   </form>
 
   <section class="map-section">
     <h2>Map</h2>
     <p>Click on the map to select a location.</p>
-    <div id="weather-map" class="weather-map"></div>
+    <div #mapElement id="weather-map" class="weather-map"></div>
   </section>
 
-  @if (errorMessage) {
-    <p class="error-message">{{ errorMessage }}</p>
+  <p class="info-message status-message" role="status">{{ statusMessage() }}</p>
+
+  @if (errorMessage()) {
+    <p class="error-message" role="alert">{{ errorMessage() }}</p>
   }
 
-  @if (weather) {
-    <section class="current-weather">
-      <h2>Current weather</h2>
+  @if (weather(); as weather) {
+    <div class="weather-results" [class.is-loading]="loading()" [attr.aria-busy]="loading()">
+      <section class="current-weather">
+        <h2>Current weather</h2>
 
-      <div class="weather-card">
-        <div class="current-summary">
-          <span class="weather-icon">{{ getWeatherIcon(weather.current.icon) }}</span>
+        <div class="weather-card">
+          <div class="current-summary">
+            <span class="weather-icon">{{ getWeatherIcon(weather.current.icon) }}</span>
 
-          <p class="temperature">
-            {{ weather.current.temperature | number: '1.0-1' }}°C
-          </p>
+            <p class="temperature">
+              {{ weather.current.temperature | number: '1.0-1' }}°C
+            </p>
+          </div>
+
+          @if (weather.current.description) {
+            <p>{{ weather.current.description }}</p>
+          }
+          <p class="provider">Provider: {{ providerLabel() }}</p>
+          <p>Feels like {{ weather.current.feelsLike | number: '1.0-1' }}°C</p>
+          <p>Humidity {{ weather.current.humidity }}%</p>
         </div>
+      </section>
 
-        <p>{{ weather.current.description }}</p>
-        <p class="provider">Provider: {{ getProviderLabel(weather.provider) }}</p>
-        <p>Feels like {{ weather.current.feelsLike | number: '1.0-1' }}°C</p>
-        <p>Humidity {{ weather.current.humidity }}%</p>
-      </div>
-    </section>
+      <section class="daily-forecast">
+        <h2>Daily forecast</h2>
 
-    <section class="daily-forecast">
-      <h2>Daily forecast</h2>
-
-      <div class="forecast-grid">
-        @for (day of weather.daily; track day.date) {
-          <article class="forecast-card">
-            <h3>{{ day.date | date: 'EEE, MMM d' }}</h3>
-            <p class="forecast-icon">{{ getWeatherIcon(day.icon) }}</p>
-            <p>{{ day.description }}</p>
-            <p>
-              {{ day.minTemperature | number: '1.0-1' }}°C /
-              {{ day.maxTemperature | number: '1.0-1' }}°C
-            </p>
-            @if (day.humidity !== null) {
-              <p>Humidity {{ day.humidity }}%</p>
+        @if (weather.daily.length > 0) {
+          <div class="forecast-grid">
+            @for (day of weather.daily; track day.date) {
+              <article class="forecast-card">
+                <h3>{{ day.date | date: 'EEE, MMM d' }}</h3>
+                <p class="forecast-icon">{{ getWeatherIcon(day.icon) }}</p>
+                @if (day.description) {
+                  <p>{{ day.description }}</p>
+                }
+                <p>
+                  {{ day.minTemperature | number: '1.0-1' }}°C /
+                  {{ day.maxTemperature | number: '1.0-1' }}°C
+                </p>
+                @if (day.humidity !== null) {
+                  <p>Humidity {{ day.humidity }}%</p>
+                }
+              </article>
             }
-          </article>
+          </div>
+        } @else {
+          <p class="info-message">No daily forecast is available for this location.</p>
         }
-      </div>
-    </section>
+      </section>
 
-    <section class="alerts">
-      <h2>Weather alerts</h2>
+      <section class="alerts">
+        <h2>Weather alerts</h2>
 
-      @if (weather.alerts.length > 0) {
-        @for (alert of weather.alerts; track alert.event + alert.start) {
-          <article class="alert-card">
-            <h3>{{ alert.event }}</h3>
-            <p>{{ alert.description }}</p>
-            <p>
-              {{ alert.start | date: 'short' }} -
-              {{ alert.end | date: 'short' }}
-            </p>
-            <p>{{ alert.senderName }}</p>
-          </article>
+        @if (weather.alerts.length > 0) {
+          @for (alert of weather.alerts; track alert.event + alert.start) {
+            <article class="alert-card">
+              <h3>{{ alert.event }}</h3>
+              @if (alert.description) {
+                <p>{{ alert.description }}</p>
+              }
+              <p>
+                {{ alert.start | date: 'short' }} -
+                {{ alert.end | date: 'short' }}
+              </p>
+              <p>{{ alert.senderName }}</p>
+            </article>
+          }
+        } @else if (!alertsAvailable()) {
+          <p class="info-message">
+            Weather alerts are not available from {{ providerLabel() }} yet.
+          </p>
+        } @else {
+          <p>No weather alerts for this location.</p>
         }
-      } @else if (!areAlertsAvailableForProvider(weather.provider)) {
-        <p class="info-message">
-          Weather alerts are not available from {{ getProviderLabel(weather.provider) }} yet.
-        </p>
-      } @else {
-        <p>No weather alerts for this location.</p>
-      }
-    </section>
+      </section>
+    </div>
   }
 </main>

@@ -75,6 +75,17 @@
   opacity: 0.75;
 }
 
+// The live region stays in the DOM so screen readers announce new text; it only takes no space.
+.status-message:empty {
+  margin: 0;
+}
+
+// Earlier weather stays visible while new weather loads, but it should not look current.
+.weather-results.is-loading {
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
 .map-section {
   margin-top: 2rem;
 

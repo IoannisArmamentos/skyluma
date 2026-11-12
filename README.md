@@ -16,7 +16,7 @@ SkyLuma/
 
 ### Backend
 
-1. Java 21
+1. Java 27
 2. Spring Boot
 3. Maven
 4. Lombok
